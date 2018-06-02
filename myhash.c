@@ -73,7 +73,7 @@ void add_point_hash(char * point, double *vector) {
     s=(HASH *)malloc(sizeof(HASH));
     printf("[add_point_hash] malloced s\n");
     s->num_vectors=0;
-    s->vertex=(char *)calloc(sizeof(char),strlen(point));
+    s->vertex=(char *)calloc(sizeof(char),22);
     strcpy(s->vertex,point);
     //s->vectors=(double **)malloc(sizeof(double *));
 
@@ -135,12 +135,12 @@ void free_hash() {
   for(current_point=vector_hash;current_point!=NULL; current_point=current_point->hh.next) {
     //free stuff
     
-    printf("next point to free: [%s]\n",current_point->vertex);
+    //printf("next point to free: [%s]\n",current_point->vertex);
     print_vectors(current_point->vectors,current_point->num_vectors);
     int i;
     for (i=0;i<current_point->num_vectors;i++) {
       free(current_point->vectors[i]);//error because they have been freed already
-      printf("freed vector %d\n",i);
+      //printf("freed vector %d\n",i);
     }
     //free(current_point->vectors);
     free(current_point->vertex);
