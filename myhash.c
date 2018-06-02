@@ -128,7 +128,7 @@ void free_hash() {
   HASH * current_point;
   for(current_point=vector_hash;current_point!=NULL; current_point=current_point->hh.next) {
     //free stuff
-    //xHASH_DEL(vector_hash,current_point);
+    
     printf("next point to free: [%s]\n",current_point->vertex);
     print_vectors(current_point->vectors,current_point->num_vectors);
     int i;
@@ -138,6 +138,7 @@ void free_hash() {
     }
     free(current_point->vectors);
     free(current_point->vertex);
+    HASH_DEL(vector_hash,current_point);
     free(current_point);
   }
 }
