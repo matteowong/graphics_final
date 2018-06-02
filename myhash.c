@@ -82,14 +82,18 @@ void add_point_hash(char * point, double *vector) {
     s->vectors[s->num_vectors]=vector;
     s->num_vectors++;
     printf("[add_point_hash]almost there\n");*/
+
+    s->vectors[s->num_vectors]=vector;
+    s->num_vectors++;
     HASH_ADD_KEYPTR(hh, vector_hash, s->vertex, strlen(s->vertex), s);
   } else {
-
-    /*
     s->num_vectors++;
+    s->vectors[s->num_vectors-1]=vector;
+    /*
+    
     s->vectors[s->num_vectors-1]=(double *)malloc(sizeof(double)*3);;
 
-    s->vectors[s->num_vectors-1]=vector;
+    
     //s->vectors=realloc(s->vectors,s->num_vectors*sizeof(double*));
     //s->vectors[s->num_vectors-1]=vector;
     printf("[add_point_hash]updated [%s]\n",point);
@@ -157,9 +161,9 @@ int main(int argc, char **argv) {
     printf("point [%s]\n",s->vertex);
     print_vectors(s->vectors,s->num_vectors);
     }*/
-  //print_hash();
-  //printf("\n\nprint two\n\n");
-  //print_hash();
+  print_hash();
+  printf("\n\nprint two\n\n");
+  print_hash();
   free_hash();
   free_matrix(polygons);
   return 0;
