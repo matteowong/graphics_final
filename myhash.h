@@ -7,7 +7,7 @@
 
 typedef struct {
   char * vertex;
-  double **vectors;
+  double *vectors[6];
   int num_vectors;
   UT_hash_handle hh;
 } HASH;
