@@ -34,7 +34,7 @@ void create_hash_table(struct matrix * polygons) {
     normalize(normal_two);
     //printf("[create hash] normalized first vector\n");
     add_point_hash(key, normal);
-    printf("[create hash loop %d] added first point\n",i);
+    //printf("[create hash loop %d] added first point\n",i);
     
     //second vertex
     i++;
@@ -45,7 +45,7 @@ void create_hash_table(struct matrix * polygons) {
     
     //printf("[%s]\n",key_one);
     add_point_hash(key_one, normal_one);
-    printf("[create hash loop %d] added second point\n",i);
+    //printf("[create hash loop %d] added second point\n",i);
 
     //third vertex
     i++;
@@ -53,9 +53,9 @@ void create_hash_table(struct matrix * polygons) {
     //printf("made key_two\n");
     printf("[%3.3lf%3.3lf%3.3lf]\n",polygons->m[0][i],polygons->m[1][i],polygons->m[2][i]);
     sprintf(key_two, "%3.3lf%3.3lf%3.3lf",polygons->m[0][i],polygons->m[1][i],polygons->m[2][i]);
-    printf("sprintfed\n");
+    //printf("sprintfed\n");
     add_point_hash(key_two, normal_two);
-    printf("[create hash loop %d] added third point\n",i);;
+    //printf("[create hash loop %d] added third point\n",i);;
     i++;
 
   }
@@ -66,12 +66,12 @@ void add_point_hash(char * point, double *vector) {
   HASH *s;
 
   HASH_FIND_STR(vector_hash, point, s);
-  printf("[add_point_hash] hash_find_str done\n");
+  //printf("[add_point_hash] hash_find_str done\n");
 
   if (s==NULL) {
-    printf("[add_point_hash] s is NULL\n");
+    //printf("[add_point_hash] s is NULL\n");
     s=(HASH *)malloc(sizeof(HASH));
-    printf("[add_point_hash] malloced s\n");
+    //printf("[add_point_hash] malloced s\n");
     s->num_vectors=0;
     s->vertex=(char *)calloc(sizeof(char),22);
     strcpy(s->vertex,point);
