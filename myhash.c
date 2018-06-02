@@ -136,7 +136,7 @@ void free_hash() {
     //free stuff
     
     //printf("next point to free: [%s]\n",current_point->vertex);
-    print_vectors(current_point->vectors,current_point->num_vectors);
+    //print_vectors(current_point->vectors,current_point->num_vectors);
     int i;
     for (i=0;i<current_point->num_vectors;i++) {
       free(current_point->vectors[i]);//error because they have been freed already
