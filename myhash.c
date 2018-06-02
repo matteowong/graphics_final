@@ -159,5 +159,6 @@ int main(int argc, char **argv) {
   printf("\n\nprint two\n\n");
   print_hash();
   free_hash();
+  free_matrix(polygons);
   return 0;
 }
