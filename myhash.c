@@ -28,6 +28,10 @@ void create_hash_table(struct matrix * polygons) {
     sprintf(key, "%3.3lf%3.3lf%3.3lf",polygons->m[0][i],polygons->m[1][i],polygons->m[2][i]);
     double *normal=calculate_normal(polygons, i);
     normalize(normal);
+    double *normal_one=calculate_normal(polygons, i);
+    normalize(normal_one);
+    double *normal_two=calculate_normal(polygons, i);
+    normalize(normal_two);
     //printf("[create hash] normalized first vector\n");
     add_point_hash(key, normal);
     printf("[create hash loop %d] added first point\n",i);
@@ -40,7 +44,7 @@ void create_hash_table(struct matrix * polygons) {
     sprintf(key_one,"%3.3lf%3.3lf%3.3lf",polygons->m[0][i],polygons->m[1][i],polygons->m[2][i]);
     
     //printf("[%s]\n",key_one);
-    add_point_hash(key_one, normal);
+    add_point_hash(key_one, normal_one);
     printf("[create hash loop %d] added second point\n",i);
 
     //third vertex
@@ -50,7 +54,7 @@ void create_hash_table(struct matrix * polygons) {
     printf("[%3.3lf%3.3lf%3.3lf]\n",polygons->m[0][i],polygons->m[1][i],polygons->m[2][i]);
     sprintf(key_two, "%3.3lf%3.3lf%3.3lf",polygons->m[0][i],polygons->m[1][i],polygons->m[2][i]);
     printf("sprintfed\n");
-    add_point_hash(key_two, normal);
+    add_point_hash(key_two, normal_two);
     printf("[create hash loop %d] added third point\n",i);;
     i++;
 
@@ -79,8 +83,14 @@ void add_point_hash(char * point, double *vector) {
     HASH_ADD_KEYPTR(hh, vector_hash, s->vertex, strlen(s->vertex), s);
   } else {
     s->num_vectors++;
-    s->vectors=realloc(s->vectors,s->num_vectors*sizeof(double*));
+    s->vectors[s->num_vectors-1]=(double *)malloc(sizeof(double)*3);;
+    /*double *new_vector
+    new_vector[0]=vector[0];
+    new_vector[1]=vector[1];
+    new_vector[2]=vector[2];*/
     s->vectors[s->num_vectors-1]=vector;
+    //s->vectors=realloc(s->vectors,s->num_vectors*sizeof(double*));
+    //s->vectors[s->num_vectors-1]=vector;
     printf("[add_point_hash]updated [%s]\n",point);
 
   }
@@ -101,18 +111,33 @@ void print_vectors(double ** vectors, int num_vectors) {
 
 }
 
-void free_hash() {
-  HASH * current_point, *tmp;
+void print_hash() {
 
-  HASH_ITER(hh, vector_hash, current_point, tmp) {
+  HASH * s;
+  for (s=vector_hash; s!=NULL; s=s->hh.next) {
+    printf("point [%s]\n",s->vertex);
+    print_vectors(s->vectors,s->num_vectors);
+  }
+
+}
+
+void free_hash() {
+  //HASH * current_point, *tmp;
+
+  //HASH_ITER(hh, vector_hash, current_point, tmp) {
+  HASH * current_point;
+  for(current_point=vector_hash;current_point!=NULL; current_point=current_point->hh.next) {
     //free stuff
-    free(current_point->vertex);
+    //xHASH_DEL(vector_hash,current_point);
+    printf("next point to free: [%s]\n",current_point->vertex);
+    print_vectors(current_point->vectors,current_point->num_vectors);
     int i;
     for (i=0;i<current_point->num_vectors;i++) {
-      //free(current_point->vectors[i]);
+      free(current_point->vectors[i]);//error because they have been freed already
+      printf("freed vector %d\n",i);
     }
     free(current_point->vectors);
-    HASH_DEL(vector_hash,current_point);
+    free(current_point->vertex);
     free(current_point);
   }
 }
@@ -124,11 +149,14 @@ int main(int argc, char **argv) {
   printf("created sphere\n");
   create_hash_table(polygons);
 
-  HASH * s;
+  /*HASH * s;
   for (s=vector_hash; s!=NULL; s=s->hh.next) {
     printf("point [%s]\n",s->vertex);
     print_vectors(s->vectors,s->num_vectors);
-  }
+    }*/
+  print_hash();
+  printf("\n\nprint two\n\n");
+  print_hash();
   free_hash();
   return 0;
 }
