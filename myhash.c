@@ -76,8 +76,8 @@ void add_point_hash(char * point, double *vector) {
     s->vertex=(char *)calloc(sizeof(char),strlen(point));
     strcpy(s->vertex,point);
     s->vectors=(double **)malloc(sizeof(double *));
-    s->vectors[s->num_vectors]=(double *)malloc(sizeof(double)*3);
-    s->vectors[s->num_vectors]=vector;
+    s->vectors[s->num_vectors-1]=(double *)malloc(sizeof(double)*3);
+    s->vectors[s->num_vectors-1]=vector;
     s->num_vectors++;
     printf("[add_point_hash]almost there\n");
     HASH_ADD_KEYPTR(hh, vector_hash, s->vertex, strlen(s->vertex), s);
