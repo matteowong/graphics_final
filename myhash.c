@@ -51,7 +51,7 @@ void create_hash_table(struct matrix * polygons) {
     i++;
     char key_two[22];
     //printf("made key_two\n");
-    printf("[%3.3lf%3.3lf%3.3lf]\n",polygons->m[0][i],polygons->m[1][i],polygons->m[2][i]);
+    //printf("[%3.3lf%3.3lf%3.3lf]\n",polygons->m[0][i],polygons->m[1][i],polygons->m[2][i]);
     sprintf(key_two, "%3.3lf%3.3lf%3.3lf",polygons->m[0][i],polygons->m[1][i],polygons->m[2][i]);
     //printf("sprintfed\n");
     add_point_hash(key_two, normal_two);
@@ -59,6 +59,15 @@ void create_hash_table(struct matrix * polygons) {
     i++;
 
   }
+}
+
+double * lookup_point(char * key) {
+  HASH * s;
+  HASH_FIND_STR(vector_hash, key, s);
+  if (s)
+    return s->vnormal;
+  else
+    return NULL;
 }
 
 void add_point_hash(char * point, double *vector) {
@@ -123,6 +132,7 @@ void print_hash() {
   for (s=vector_hash; s!=NULL; s=s->hh.next) {
     printf("point [%s]\n",s->vertex);
     print_vectors(s->vectors,s->num_vectors);
+    printf("vertex normal:\nx:%lf |y:%lf |z:%lf\n",s->vnormal[0],s->vnormal[1],s->vnormal[2]);
   }
 
 }
@@ -149,6 +159,23 @@ void free_hash() {
   }
 }
 
+void calculate_vnormals() {
+  HASH * current_point;
+  for(current_point=vector_hash;current_point!=NULL; current_point=current_point->hh.next) {
+    int i;
+    current_point->vnormal[0]=0;
+    current_point->vnormal[1]=0;
+    current_point->vnormal[2]=0;
+    for (i=0;i<current_point->num_vectors;i++) {
+      current_point->vnormal[0]+=current_point->vectors[i][0];
+      current_point->vnormal[1]+=current_point->vectors[i][1];
+      current_point->vnormal[2]+=current_point->vectors[i][2];
+    }
+    normalize(current_point->vnormal);
+  }
+}
+
+/*
 int main(int argc, char **argv) {
   struct matrix*polygons=new_matrix(4,1000);
   //add_box(polygons, 0, 10, 20, 30, 40, 50);
@@ -156,15 +183,11 @@ int main(int argc, char **argv) {
   printf("created sphere\n");
   create_hash_table(polygons);
 
-  /*HASH * s;
-  for (s=vector_hash; s!=NULL; s=s->hh.next) {
-    printf("point [%s]\n",s->vertex);
-    print_vectors(s->vectors,s->num_vectors);
-    }*/
+  
   print_hash();
   printf("\n\nprint two\n\n");
   print_hash();
   free_hash();
   free_matrix(polygons);
   return 0;
-}
+}*/

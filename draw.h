@@ -5,6 +5,7 @@
 #include "ml6.h"
 
 void scanline_convert( struct matrix *points, int i, screen s, zbuffer zb, color c );
+void scanline_convert_gouraud( struct matrix *points, int i, screen s, zbuffer zb, double *view, double light[2][3], color ambient, double *areflect, double *dreflect, double *sreflect);
 
 //polygon organization
 void add_polygons( struct matrix * points,
@@ -49,5 +50,8 @@ void draw_lines( struct matrix * points, screen s, zbuffer zb, color c);
 void draw_line(int x0, int y0, double z0,
                int x1, int y1, double z1,
                screen s, zbuffer zb, color c);
+void draw_line_gouraud(int x0, int y0, double z0,
+               int x1, int y1, double z1,
+               screen s, zbuffer zb, color c_0, color c_1);
 
 #endif

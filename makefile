@@ -1,4 +1,4 @@
-OBJECTS= symtab.o print_pcode.o matrix.o my_main.o display.o draw.o gmath.o stack.o
+OBJECTS= symtab.o print_pcode.o matrix.o my_main.o display.o draw.o gmath.o stack.o myhash.o
 CFLAGS= -g
 LDFLAGS= -lm
 CC= gcc
@@ -40,6 +40,9 @@ gmath.o: gmath.c gmath.h matrix.h
 
 stack.o: stack.c stack.h matrix.h
 	$(CC) $(CFLAGS) -c stack.c
+
+myhash.o: draw.c draw.h display.h myhash.c matrix.h gmath.h
+	$(CC) $(CFLAGS) -c myhash.c 
 
 clean:
 	rm y.tab.c y.tab.h

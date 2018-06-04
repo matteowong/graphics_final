@@ -8,6 +8,7 @@
 #include "matrix.h"
 #include "math.h"
 #include "gmath.h"
+#include "myhash.h"
 
 /*======== void scanline_convert() ==========
   Inputs: struct matrix *points
@@ -111,6 +112,196 @@ void scanline_convert( struct matrix *points, int i, screen s, zbuffer zb, color
   }//end scanline loop
 }
 
+
+void scanline_convert_gouraud( struct matrix *points, int i, screen s, zbuffer zb, double *view, double light[2][3], color ambient, double *areflect, double *dreflect, double *sreflect) {
+
+  int top, mid, bot, y;
+  int distance0, distance1, distance2;
+  double x0, x1, y0, y1, y2, dx0, dx1, z0, z1, dz0, dz1;
+  int flip = 0;
+
+  z0 = z1 = dz0 = dz1 = 0;
+
+  y0 = points->m[1][i];
+  y1 = points->m[1][i+1];
+  y2 = points->m[1][i+2];
+
+  /* color c; */
+  /* c.red = (23 * (i/3))%255; */
+  /* c.green = (109 * (i/3))%255; */
+  /* c.blue = (c.blue+(227 * (i/3)))%255; */
+
+  //find bot, mid, top
+  if ( y0 <= y1 && y0 <= y2) {
+    bot = i;
+    if (y1 <= y2) {
+      mid = i+1;
+      top = i+2;
+    }
+    else {
+      mid = i+2;
+      top = i+1;
+    }
+  }//end y0 bottom
+  else if (y1 <= y0 && y1 <= y2) {
+    bot = i+1;
+    if (y0 <= y2) {
+      mid = i;
+      top = i+2;
+    }
+    else {
+      mid = i+2;
+      top = i;
+    }
+  }//end y1 bottom
+  else {
+    bot = i+2;
+    if (y0 <= y1) {
+      mid = i;
+      top = i+1;
+    }
+    else {
+      mid = i+1;
+      top = i;
+    }
+  }//end y2 bottom
+  //printf("ybot: %0.2f, ymid: %0.2f, ytop: %0.2f\n", (points->m[1][bot]),(points->m[1][mid]), (points->m[1][top]));
+  /* printf("bot: (%0.2f, %0.2f, %0.2f) mid: (%0.2f, %0.2f, %0.2f) top: (%0.2f, %0.2f, %0.2f)\n", */
+
+  color c_bot;
+  color c_mid;
+  color c_top;
+  
+  //calculate bottom color
+  char key[22];
+  sprintf(key, "%3.3lf%3.3lf%3.3lf",points->m[0][bot],points->m[1][bot],points->m[2][bot]);
+  double * vnormal_b=lookup_point(key);
+  c_bot=get_lighting(vnormal_b, view, ambient, light, areflect, dreflect, sreflect);
+  key[0]=0;
+  
+  sprintf(key, "%3.3lf%3.3lf%3.3lf",points->m[0][mid],points->m[1][mid],points->m[2][mid]);
+  double * vnormal_m=lookup_point(key);
+  c_mid=get_lighting(vnormal_m, view, ambient, light, areflect, dreflect, sreflect);
+  key[0]=0;
+  
+  sprintf(key, "%3.3lf%3.3lf%3.3lf",points->m[0][top],points->m[1][top],points->m[2][top]);
+  double * vnormal_t=lookup_point(key);
+  c_top=get_lighting(vnormal_t, view, ambient, light, areflect, dreflect, sreflect);
+
+  //printf("vertex normal bot:\nx:%lf |y:%lf |z:%lf\n",vnormal_b[0],vnormal_b[1],vnormal_b[2]);
+  //printf("vertex normal mid:\nx:%lf |y:%lf |z:%lf\n",vnormal_m[0],vnormal_m[1],vnormal_m[2]);
+  //printf("vertex normal top:\nx:%lf |y:%lf |z:%lf\n",vnormal_t[0],vnormal_t[1],vnormal_t[2]);
+
+  //printf("\n");
+
+  //printf("color bottom: red:%d green:%d blue: %d\n",c_bot.red,c_bot.green,c_bot.blue);
+  //printf("color middle: red:%d green:%d blue: %d\n",c_mid.red,c_mid.green,c_mid.blue);
+  //printf("color top: red:%d green:%d blue: %d\n\n",c_top.red,c_top.green,c_top.blue);
+  
+  //calculate colors for gouraud
+
+  
+  x0 = points->m[0][bot];
+  x1 = points->m[0][bot];
+  z0 = points->m[2][bot];
+  z1 = points->m[2][bot];
+  y = (int)(points->m[1][bot]);
+
+  distance0 = (int)(points->m[1][top]) - y;
+  distance1 = (int)(points->m[1][mid]) - y;
+  distance2 = (int)(points->m[1][top]) - (int)(points->m[1][mid]);
+
+  //printf("distance0: %d distance1: %d distance2: %d\n", distance0, distance1, distance2);
+  dx0 = distance0 > 0 ? (points->m[0][top]-points->m[0][bot])/distance0 : 0;
+  dx1 = distance1 > 0 ? (points->m[0][mid]-points->m[0][bot])/distance1 : 0;
+  dz0 = distance0 > 0 ? (points->m[2][top]-points->m[2][bot])/distance0 : 0;
+  dz1 = distance1 > 0 ? (points->m[2][mid]-points->m[2][bot])/distance1 : 0;
+
+  //calculate colors using c_bot, c_mid, c_top
+  color c_0=c_bot;
+  color c_1=c_bot;
+  /*c_0.r=((y-((int)(points->m[1][bot])))/distance0)*c_top.r+
+    ((((int)(points->m[1][top]))-y)/distance0)*c_bot.r;*/
+  double dc_0,dc_1,dc_0r,dc_0g,dc_0b,dc_1r,dc_1g,dc_1b;
+  //printf("[gouraud] pre\n");
+  dc_0=distance0 > 0 ? 1/(float)distance0 : 0;
+  dc_1=distance1 > 0 ? 1/(float)distance1 : 0;
+  //printf("[gouraud] divisions by d0 d1\n");
+  dc_0r=(-c_bot.red*dc_0 + c_top.red*dc_0);
+  dc_0g=(-c_bot.green*dc_0 + c_top.green*dc_0);
+  dc_0b=(-c_bot.blue*dc_0 + c_top.blue*dc_0);
+
+  dc_1r=(-c_bot.red*dc_1 + c_mid.red*dc_1);
+  dc_1g=(-c_bot.green*dc_1 + c_mid.green*dc_1);
+  dc_1b=(-c_bot.blue*dc_1 + c_mid.blue*dc_1);
+
+  while ( y <= (int)points->m[1][top] ) {
+    
+    //printf("\tx0: %0.2f x1: %0.2f y: %d\n", x0, x1, y);
+    draw_line_gouraud(x0, y, z0, x1, y, z1, s, zb, c_0,c_1);
+
+    //printf("color 0: red:%d green:%d blue: %d\n",c_0.red,c_0.green,c_0.blue);
+    //printf("color 1: red:%d green:%d blue: %d\n",c_1.red,c_1.green,c_1.blue);
+    
+    //calculate colors
+    //DONT SET TO ZERO
+    //printf("int check: %lf\n",(y-points->m[1][bot])/distance0);
+
+    /*
+    c_0.red=distance0 > 0 ? (int) ((y-points->m[1][bot])/distance0*c_top.red+(points->m[1][top]-y)/distance0*c_bot.red) : c_bot.red;
+    c_0.green=distance0 > 0 ? (int) ((y-points->m[1][bot])/distance0*c_top.green+(points->m[1][top]-y)/distance0*c_bot.green) : c_bot.green;
+    c_0.blue=distance0 > 0 ? (int) ((y-points->m[1][bot])/distance0*c_top.blue+(points->m[1][top]-y)/distance0*c_bot.blue) : c_bot.blue;
+    
+    if (!flip) {
+      c_1.red=distance1 > 0 ? (int) ((y-points->m[1][bot]/distance1)*c_mid.red+(points->m[1][mid]-y)/distance1*c_bot.red) : c_mid.red;
+      c_1.green=distance1 > 0 ? (int) ((y-points->m[1][bot])/distance1*c_mid.green+(points->m[1][mid]-y)/distance1*c_bot.green) : c_mid.green;
+      c_1.blue=distance1 > 0 ? (int) ((y-points->m[1][bot])/distance1*c_mid.blue+(points->m[1][mid]-y)/distance1*c_bot.blue) : c_mid.blue;
+
+    } else {
+      c_1.red=distance2 > 0 ? (int) ((y-points->m[1][mid])/distance2*c_top.red+(points->m[1][top]-y)/distance2*c_mid.red) : c_mid.red;
+      c_1.green=distance2 > 0 ? (int) ((y-points->m[1][mid])/distance2*c_top.green+(points->m[1][top]-y)/distance2*c_mid.green) : c_mid.green;
+      c_1.blue=distance2 > 0 ? (int) ((y-points->m[1][mid])/distance2*c_top.blue+(points->m[1][top]-y)/distance2*c_mid.blue) : c_mid.blue;
+
+      }*/
+    
+    c_0.red=(int) (c_0.red+dc_0r);
+    c_0.green=(int) (c_0.green+dc_0g);
+    c_0.blue+=(int) (c_0.blue+dc_0b);
+
+    c_1.red=(int) (c_1.red+dc_1r);
+    c_1.green=(int) (c_1.green+dc_1g);
+    c_1.blue+=(int) (c_1.blue+dc_1b);
+
+    x0+= dx0;
+    x1+= dx1;
+    z0+= dz0;
+    z1+= dz1;
+    y++;
+
+    if ( !flip && y >= (int)(points->m[1][mid]) ) {
+      flip = 1;
+      dx1 = distance2 > 0 ? (points->m[0][top]-points->m[0][mid])/distance2 : 0;
+      dz1 = distance2 > 0 ? (points->m[2][top]-points->m[2][mid])/distance2 : 0;
+      //printf("[gouraud] flip: before 1/distance2\n");
+
+      dc_1= distance2 > 0 ? 1/(float)distance2 : 0;
+      dc_1r=(-c_mid.red*dc_1 + c_top.red*dc_1);
+      dc_1g=(-c_mid.green*dc_1 + c_top.green*dc_1);
+      dc_1b=(-c_mid.blue*dc_1 + c_top.blue*dc_1);
+      //printf("[gouraud] recalculated shadings\n");
+      
+      x1 = points->m[0][mid];
+      z1 = points->m[2][mid];
+      c_1=c_mid;
+    }//end flip code
+  }//end scanline loop
+  //printf("end scanline loop\n");
+}
+
+
+
+
+
 /*======== void add_polygon() ==========
   Inputs:   struct matrix *surfaces
   double x0
@@ -159,16 +350,30 @@ void draw_polygons(struct matrix *polygons, screen s, zbuffer zb,
   int point;
   double *normal;
 
+  create_hash_table(polygons);
+  calculate_vnormals();
+  print_hash();
+
   for (point=0; point < polygons->lastcol-2; point+=3) {
 
     normal = calculate_normal(polygons, point);
+    normalize(normal);
+    //printf("vertex normal:\nx:%lf |y:%lf |z:%lf\n",normal[0],normal[1],normal[2]);
 
     if ( dot_product(normal, view) > 0 ) {
 
-      color c = get_lighting(normal, view, ambient, light, areflect, dreflect, sreflect);
+      //color c = get_lighting(normal, view, ambient, light, areflect, dreflect, sreflect);
+      //scanline_convert(polygons, point, s, zb, c);
+      //if statement for shading models
+      /*if () {//flat
+	
+	}else if () {//gouraud*/
+      scanline_convert_gouraud(polygons, point, s, zb, view, light, ambient, areflect, dreflect, sreflect);
+	//printf("[inside draw polygons]end scanline convert\n");
+	//}
 
-      scanline_convert(polygons, point, s, zb, c);
-
+      
+	/*
       draw_line( polygons->m[0][point],
                  polygons->m[1][point],
                  polygons->m[2][point],
@@ -189,10 +394,19 @@ void draw_polygons(struct matrix *polygons, screen s, zbuffer zb,
                  polygons->m[0][point+2],
                  polygons->m[1][point+2],
                  polygons->m[2][point+2],
-                 s, zb, c);
+                 s, zb, c);*/
     }
+    //printf("end normal check\n");
   }
+  //printf("pre free hash\n");
+  free_hash();
+  //printf("draw polygons done\n");
+
 }
+
+
+
+
 
 /*======== void add_box() ==========
   Inputs:   struct matrix * edges
@@ -704,3 +918,86 @@ void draw_line(int x0, int y0, double z0,
   } //end drawing loop
   plot( s, zb, c, x1, y1, z );
 } //end draw_line
+
+//scanline_convert_phong
+//draw_line_phong
+//scanline_convert_gouraud
+//draw_line_gouraud
+
+
+//always draws horizontal lines
+void draw_line_gouraud(int x0, int y0, double z0,
+               int x1, int y1, double z1,
+               screen s, zbuffer zb, color c_0, color c_1) {
+
+  //printf("color 0: red:%d green:%d blue: %d\n",c_0.red,c_0.green,c_0.blue);
+  //printf("color 1: red:%d green:%d blue: %d\n",c_1.red,c_1.green,c_1.blue);
+
+  int x, y;
+
+  double z, dz;
+
+  //swap points if going right -> left
+  int xt,zt;
+  color c;
+  if (x0 > x1) {
+    xt = x0;
+
+    c = c_0;
+    z = z0;
+    x0 = x1;
+    
+    z0 = z1;
+    c_0 = c_1;
+    x1 = xt;
+    
+    z1 = z;
+    c_1 = c;
+  }
+
+  x=x0;
+  z = z0;
+  dz = (z1 - z0) / (x1-x0);
+  //printf("\t(%d, %d) -> (%d, %d)\tdistance: %0.2f\tdz: %0.2f\tz: %0.2f\n", x0, y0, x1, y1, distance, dz, z);
+
+  //color stuff, c=(x1-x)/(x1-x0)*c_0 + (x-x_0)/(x1-x0)*c_1
+  c=c_0;
+  
+  while (x<x1) {
+    plot( s, zb, c, x, y0, z );  
+    //printf("[gouraud draw line colors]\n");
+    //printf("x1-x0: %d\n",x1-x0);
+    //printf("x1-x/x1-x0: %lf | x-x0/(x1-x0): %lf\n",(double)(x1-x)/(x1-x0),(double)(x-x0)/(x1-x0));
+    c.red=(int) ( (double)(x1-x)/(x1-x0)*c_0.red + (double)(x-x0)/(x1-x0)*c_1.red);
+    c.green=(int) ( (double)(x1-x)/(x1-x0)*c_0.green + (double)(x-x0)/(x1-x0)*c_1.green);
+    c.blue=(int) ( (double)(x1-x)/(x1-x0)*c_0.blue + (double)(x-x0)/(x1-x0)*c_1.blue);
+    printf("color: red:%d green:%d blue: %d\n",c.red,c.green,c.blue);
+    z+=dz;
+    x++;
+  } //end drawing loop
+  plot( s, zb, c, x1, y1, z );  
+} //end draw_line
+
+/*
+int main() {
+
+  color a,b;
+  a.red=0;
+  a.green=0;
+  a.blue=0;
+  b.red=220;
+  b.green=220;
+  b.blue=220;
+  screen s;
+  zbuffer zb;
+  clear_screen(s);
+  clear_zbuffer(zb);
+
+  draw_line_gouraud(10, 100, 8, 300, 100, 99, s, zb, a, b);
+  draw_line_gouraud(10, 101, 8, 300, 101, 99, s, zb, a, b);
+  draw_line_gouraud(10, 102, 8, 300, 102, 99, s, zb, a, b);
+  display(s);
+  
+
+  return 0;
+  }*/
