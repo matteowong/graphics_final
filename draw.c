@@ -173,7 +173,7 @@ void scanline_convert_gouraud( struct matrix *points, int i, screen s, zbuffer z
   color c_top;
   
   //calculate bottom color
-  char key[22];
+  char key[25];
   sprintf(key, "%3.3lf%3.3lf%3.3lf",points->m[0][bot],points->m[1][bot],points->m[2][bot]);
   double * vnormal_b=lookup_point(key);
   c_bot=get_lighting(vnormal_b, view, ambient, light, areflect, dreflect, sreflect);
@@ -187,19 +187,6 @@ void scanline_convert_gouraud( struct matrix *points, int i, screen s, zbuffer z
   sprintf(key, "%3.3lf%3.3lf%3.3lf",points->m[0][top],points->m[1][top],points->m[2][top]);
   double * vnormal_t=lookup_point(key);
   c_top=get_lighting(vnormal_t, view, ambient, light, areflect, dreflect, sreflect);
-
-  //printf("vertex normal bot:\nx:%lf |y:%lf |z:%lf\n",vnormal_b[0],vnormal_b[1],vnormal_b[2]);
-  //printf("vertex normal mid:\nx:%lf |y:%lf |z:%lf\n",vnormal_m[0],vnormal_m[1],vnormal_m[2]);
-  //printf("vertex normal top:\nx:%lf |y:%lf |z:%lf\n",vnormal_t[0],vnormal_t[1],vnormal_t[2]);
-
-  //printf("\n");
-
-  //printf("color bottom: red:%d green:%d blue: %d\n",c_bot.red,c_bot.green,c_bot.blue);
-  //printf("color middle: red:%d green:%d blue: %d\n",c_mid.red,c_mid.green,c_mid.blue);
-  //printf("color top: red:%d green:%d blue: %d\n\n",c_top.red,c_top.green,c_top.blue);
-  
-  //calculate colors for gouraud
-
   
   x0 = points->m[0][bot];
   x1 = points->m[0][bot];
@@ -239,38 +226,16 @@ void scanline_convert_gouraud( struct matrix *points, int i, screen s, zbuffer z
     
     //printf("\tx0: %0.2f x1: %0.2f y: %d\n", x0, x1, y);
     draw_line_gouraud(x0, y, z0, x1, y, z1, s, zb, c_0,c_1);
-
     //printf("color 0: red:%d green:%d blue: %d\n",c_0.red,c_0.green,c_0.blue);
     //printf("color 1: red:%d green:%d blue: %d\n",c_1.red,c_1.green,c_1.blue);
     
-    //calculate colors
-    //DONT SET TO ZERO
-    //printf("int check: %lf\n",(y-points->m[1][bot])/distance0);
-
-    /*
-    c_0.red=distance0 > 0 ? (int) ((y-points->m[1][bot])/distance0*c_top.red+(points->m[1][top]-y)/distance0*c_bot.red) : c_bot.red;
-    c_0.green=distance0 > 0 ? (int) ((y-points->m[1][bot])/distance0*c_top.green+(points->m[1][top]-y)/distance0*c_bot.green) : c_bot.green;
-    c_0.blue=distance0 > 0 ? (int) ((y-points->m[1][bot])/distance0*c_top.blue+(points->m[1][top]-y)/distance0*c_bot.blue) : c_bot.blue;
-    
-    if (!flip) {
-      c_1.red=distance1 > 0 ? (int) ((y-points->m[1][bot]/distance1)*c_mid.red+(points->m[1][mid]-y)/distance1*c_bot.red) : c_mid.red;
-      c_1.green=distance1 > 0 ? (int) ((y-points->m[1][bot])/distance1*c_mid.green+(points->m[1][mid]-y)/distance1*c_bot.green) : c_mid.green;
-      c_1.blue=distance1 > 0 ? (int) ((y-points->m[1][bot])/distance1*c_mid.blue+(points->m[1][mid]-y)/distance1*c_bot.blue) : c_mid.blue;
-
-    } else {
-      c_1.red=distance2 > 0 ? (int) ((y-points->m[1][mid])/distance2*c_top.red+(points->m[1][top]-y)/distance2*c_mid.red) : c_mid.red;
-      c_1.green=distance2 > 0 ? (int) ((y-points->m[1][mid])/distance2*c_top.green+(points->m[1][top]-y)/distance2*c_mid.green) : c_mid.green;
-      c_1.blue=distance2 > 0 ? (int) ((y-points->m[1][mid])/distance2*c_top.blue+(points->m[1][top]-y)/distance2*c_mid.blue) : c_mid.blue;
-
-      }*/
-    
     c_0.red=(int) (c_0.red+dc_0r);
     c_0.green=(int) (c_0.green+dc_0g);
-    c_0.blue+=(int) (c_0.blue+dc_0b);
+    c_0.blue=(int) (c_0.blue+dc_0b);
 
     c_1.red=(int) (c_1.red+dc_1r);
     c_1.green=(int) (c_1.green+dc_1g);
-    c_1.blue+=(int) (c_1.blue+dc_1b);
+    c_1.blue=(int) (c_1.blue+dc_1b);
 
     x0+= dx0;
     x1+= dx1;
@@ -298,6 +263,161 @@ void scanline_convert_gouraud( struct matrix *points, int i, screen s, zbuffer z
   //printf("end scanline loop\n");
 }
 
+
+//calculate color @ every pixel
+void scanline_convert_phong( struct matrix *points, int i, screen s, zbuffer zb, double *view, double light[2][3], color ambient, double *areflect, double *dreflect, double *sreflect) {
+
+  int top, mid, bot, y;
+  int distance0, distance1, distance2;
+  double x0, x1, y0, y1, y2, dx0, dx1, z0, z1, dz0, dz1;
+  int flip = 0;
+
+  z0 = z1 = dz0 = dz1 = 0;
+
+  y0 = points->m[1][i];
+  y1 = points->m[1][i+1];
+  y2 = points->m[1][i+2];
+
+  /* color c; */
+  /* c.red = (23 * (i/3))%255; */
+  /* c.green = (109 * (i/3))%255; */
+  /* c.blue = (c.blue+(227 * (i/3)))%255; */
+
+  //find bot, mid, top
+  if ( y0 <= y1 && y0 <= y2) {
+    bot = i;
+    if (y1 <= y2) {
+      mid = i+1;
+      top = i+2;
+    }
+    else {
+      mid = i+2;
+      top = i+1;
+    }
+  }//end y0 bottom
+  else if (y1 <= y0 && y1 <= y2) {
+    bot = i+1;
+    if (y0 <= y2) {
+      mid = i;
+      top = i+2;
+    }
+    else {
+      mid = i+2;
+      top = i;
+    }
+  }//end y1 bottom
+  else {
+    bot = i+2;
+    if (y0 <= y1) {
+      mid = i;
+      top = i+1;
+    }
+    else {
+      mid = i+1;
+      top = i;
+    }
+  }//end y2 bottom
+  //printf("ybot: %0.2f, ymid: %0.2f, ytop: %0.2f\n", (points->m[1][bot]),(points->m[1][mid]), (points->m[1][top]));
+  /* printf("bot: (%0.2f, %0.2f, %0.2f) mid: (%0.2f, %0.2f, %0.2f) top: (%0.2f, %0.2f, %0.2f)\n", */
+
+
+  char key[25];
+  sprintf(key, "%3.3lf%3.3lf%3.3lf",points->m[0][bot],points->m[1][bot],points->m[2][bot]);
+  double * vnormal_b=lookup_point(key);
+  
+  key[0]=0;
+  
+  sprintf(key, "%3.3lf%3.3lf%3.3lf",points->m[0][mid],points->m[1][mid],points->m[2][mid]);
+  double * vnormal_m=lookup_point(key);
+  
+  key[0]=0;
+  
+  sprintf(key, "%3.3lf%3.3lf%3.3lf",points->m[0][top],points->m[1][top],points->m[2][top]);
+  double * vnormal_t=lookup_point(key);
+
+  double normal_0[3];
+  normal_0[0]=vnormal_b[0];
+  normal_0[1]=vnormal_b[1];
+  normal_0[2]=vnormal_b[2];
+  
+  double normal_1[3];
+  normal_1[0]=vnormal_b[0];
+  normal_1[1]=vnormal_b[1];
+  normal_1[2]=vnormal_b[2];
+  
+  x0 = points->m[0][bot];
+  x1 = points->m[0][bot];
+  z0 = points->m[2][bot];
+  z1 = points->m[2][bot];
+  y = (int)(points->m[1][bot]);
+
+  distance0 = (int)(points->m[1][top]) - y;
+  distance1 = (int)(points->m[1][mid]) - y;
+  distance2 = (int)(points->m[1][top]) - (int)(points->m[1][mid]);
+
+  //printf("distance0: %d distance1: %d distance2: %d\n", distance0, distance1, distance2);
+  dx0 = distance0 > 0 ? (points->m[0][top]-points->m[0][bot])/distance0 : 0;
+  dx1 = distance1 > 0 ? (points->m[0][mid]-points->m[0][bot])/distance1 : 0;
+  dz0 = distance0 > 0 ? (points->m[2][top]-points->m[2][bot])/distance0 : 0;
+  dz1 = distance1 > 0 ? (points->m[2][mid]-points->m[2][bot])/distance1 : 0;
+
+  double dv_0,dv_1,dv_0x,dv_0y,dv_0z,dv_1x,dv_1y,dv_1z;
+  dv_0=distance0 > 0 ? 1/(double)distance0 : 0;
+  dv_1=distance1 > 0 ? 1/(double)distance1 : 0;
+
+  dv_0x=(-vnormal_b[0]*dv_0 + vnormal_t[0]*dv_0);
+  dv_0y=(-vnormal_b[1]*dv_0 + vnormal_t[1]*dv_0);
+  dv_0z=(-vnormal_b[2]*dv_0 + vnormal_t[2]*dv_0);
+
+  dv_1x=(-vnormal_b[0]*dv_1 + vnormal_m[0]*dv_1);
+  dv_1y=(-vnormal_b[1]*dv_1 + vnormal_m[1]*dv_1);
+  dv_1z=(-vnormal_b[2]*dv_1 + vnormal_m[2]*dv_1);
+
+  while ( y <= (int)points->m[1][top] ) {
+    
+    //printf("\tx0: %0.2f x1: %0.2f y: %d\n", x0, x1, y);
+    draw_line_phong(x0, y, z0, x1, y, z1, s, zb, normal_0,normal_1, view, light, ambient, areflect, dreflect, sreflect);
+    //printf("color 0: red:%d green:%d blue: %d\n",c_0.red,c_0.green,c_0.blue);
+    //printf("color 1: red:%d green:%d blue: %d\n",c_1.red,c_1.green,c_1.blue);
+
+
+    //normal_0, normal_1
+
+    normal_0[0]+=dv_0x;
+    normal_0[1]+=dv_0y;
+    normal_0[2]+=dv_0z;
+
+    normal_1[0]+=dv_1x;
+    normal_1[1]+=dv_1y;
+    normal_1[2]+=dv_1z;
+
+    x0+= dx0;
+    x1+= dx1;
+    z0+= dz0;
+    z1+= dz1;
+    y++;
+
+    if ( !flip && y >= (int)(points->m[1][mid]) ) {
+      flip = 1;
+      dx1 = distance2 > 0 ? (points->m[0][top]-points->m[0][mid])/distance2 : 0;
+      dz1 = distance2 > 0 ? (points->m[2][top]-points->m[2][mid])/distance2 : 0;
+      //printf("[gouraud] flip: before 1/distance2\n");
+
+      dv_1=distance2 > 0 ? 1/(double)distance2 : 0;
+      dv_1x=(-vnormal_m[0]*dv_1 + vnormal_t[0]*dv_1);
+      dv_1y=(-vnormal_m[1]*dv_1 + vnormal_t[1]*dv_1);
+      dv_1z=(-vnormal_m[2]*dv_1 + vnormal_t[2]*dv_1);
+      
+      x1 = points->m[0][mid];
+      z1 = points->m[2][mid];
+      normal_1[0]=vnormal_m[0];
+      normal_1[1]=vnormal_m[1];
+      normal_1[2]=vnormal_m[2];
+      //c_1=c_mid;
+    }//end flip code
+  }//end scanline loop
+  //printf("end scanline loop\n");
+}
 
 
 
@@ -347,10 +467,13 @@ void draw_polygons(struct matrix *polygons, screen s, zbuffer zb,
     return;
   }
 
+  printf("drawing polygons\n");
+
   int point;
   double *normal;
 
   create_hash_table(polygons);
+  printf("made hash table\n");
   calculate_vnormals();
   print_hash();
 
@@ -362,15 +485,16 @@ void draw_polygons(struct matrix *polygons, screen s, zbuffer zb,
 
     if ( dot_product(normal, view) > 0 ) {
 
+      //flat
       //color c = get_lighting(normal, view, ambient, light, areflect, dreflect, sreflect);
       //scanline_convert(polygons, point, s, zb, c);
-      //if statement for shading models
-      /*if () {//flat
-	
-	}else if () {//gouraud*/
+
+      //gouraud
       scanline_convert_gouraud(polygons, point, s, zb, view, light, ambient, areflect, dreflect, sreflect);
-	//printf("[inside draw polygons]end scanline convert\n");
-	//}
+
+      //phong
+      //scanline_convert_phong(polygons, point, s, zb, view, light, ambient, areflect, dreflect, sreflect);
+
 
       
 	/*
@@ -978,26 +1102,130 @@ void draw_line_gouraud(int x0, int y0, double z0,
   plot( s, zb, c, x1, y1, z );  
 } //end draw_line
 
+
+
+void draw_line_phong(int x0, int y0, double z0,
+		     int x1, int y1, double z1,
+		     screen s, zbuffer zb, double * n_0, double * n_1,
+		     double *view, double light[2][3], color ambient, double *areflect, double *dreflect, double *sreflect) {
+
+
+  //printf("[draw line phong] normal0:\nx:%lf |y:%lf |z:%lf\n",n_0[0],n_0[1],n_0[2]);
+  //printf("[draw line phong] normal1:\nx:%lf |y:%lf |z:%lf\n\n\n",n_1[0],n_1[1],n_1[2]);
+  
+  int x, y;
+
+  double z, dz;
+
+  //swap points if going right -> left
+  int xt,zt;
+  double* norm;
+  if (x0 > x1) {
+    xt = x0;
+
+    norm = n_0;
+    z = z0;
+    x0 = x1;
+    
+    z0 = z1;
+    n_0 = n_1;
+    x1 = xt;
+    
+    z1 = z;
+    n_1 = norm;
+  }
+
+  x=x0;
+  z = z0;
+  dz = (z1 - z0) / (x1-x0);
+  //printf("\t(%d, %d) -> (%d, %d)\tdistance: %0.2f\tdz: %0.2f\tz: %0.2f\n", x0, y0, x1, y1, distance, dz, z);
+
+  //color stuff, c=(x1-x)/(x1-x0)*c_0 + (x-x_0)/(x1-x0)*c_1
+  norm=n_0;
+  color c;
+  c=get_lighting(norm, view, ambient, light, areflect, dreflect, sreflect);
+  
+  //printf("[draw line phong] normal:\nx:%lf |y:%lf |z:%lf\n",norm[0],norm[1],norm[2]);
+  while (x<x1) {
+    plot( s, zb, c, x, y0, z );  
+
+
+    norm[0]= (double)(x1-x)/(x1-x0)*n_0[0] + (double)(x-x0)/(x1-x0)*n_1[0];
+    norm[1]= (double)(x1-x)/(x1-x0)*n_0[1] + (double)(x-x0)/(x1-x0)*n_1[1];
+    norm[2]= (double)(x1-x)/(x1-x0)*n_0[2] + (double)(x-x0)/(x1-x0)*n_1[2];
+    printf("[draw line phong] normal:\nx:%lf |y:%lf |z:%lf\n",norm[0],norm[1],norm[2]);
+    /*
+    c.red=(int) ( (double)(x1-x)/(x1-x0)*c_0.red + (double)(x-x0)/(x1-x0)*c_1.red);
+    c.green=(int) ( (double)(x1-x)/(x1-x0)*c_0.green + (double)(x-x0)/(x1-x0)*c_1.green);
+    c.blue=(int) ( (double)(x1-x)/(x1-x0)*c_0.blue + (double)(x-x0)/(x1-x0)*c_1.blue);*/
+    c=get_lighting(norm, view, ambient, light, areflect, dreflect, sreflect);
+    
+    z+=dz;
+    x++;
+  } //end drawing loop
+  c=get_lighting(n_1, view, ambient, light, areflect, dreflect, sreflect);
+  plot( s, zb, c, x1, y1, z );  
+} //end draw_line
+
+
 /*
 int main() {
 
-  color a,b;
-  a.red=0;
-  a.green=0;
-  a.blue=0;
-  b.red=220;
-  b.green=220;
-  b.blue=220;
+
+  color ambient;
+  double light[2][3];
+  double view[3];
+  double areflect[3];
+  double dreflect[3];
+  double sreflect[3];
+
+  ambient.red = 50;
+  ambient.green = 50;
+  ambient.blue = 50;
+
+  light[LOCATION][0] = 0.5;
+  light[LOCATION][1] = 0.75;
+  light[LOCATION][2] = 1;
+
+  light[COLOR][RED] = 0;
+  light[COLOR][GREEN] = 255;
+  light[COLOR][BLUE] = 255;
+
+  view[0] = 0;
+  view[1] = 0;
+  view[2] = 1;
+
+  areflect[RED] = 0.1;
+  areflect[GREEN] = 0.1;
+  areflect[BLUE] = 0.1;
+
+  dreflect[RED] = 0.5;
+  dreflect[GREEN] = 0.5;
+  dreflect[BLUE] = 0.5;
+
+  sreflect[RED] = 0.5;
+  sreflect[GREEN] = 0.5;
+  sreflect[BLUE] = 0.5;
+
+
+  double n_0[3]={1, 1, 10};
+  double n_1[3]={0, 0, 10};
+  normalize(n_0);
+  normalize(n_1);
+  printf("[draw line phong] normal0:\nx:%lf |y:%lf |z:%lf\n",n_0[0],n_0[1],n_0[2]);
+  printf("[draw line phong] normal1:\nx:%lf |y:%lf |z:%lf\n\n\n",n_1[0],n_1[1],n_1[2]);
+  
   screen s;
   zbuffer zb;
   clear_screen(s);
   clear_zbuffer(zb);
 
-  draw_line_gouraud(10, 100, 8, 300, 100, 99, s, zb, a, b);
-  draw_line_gouraud(10, 101, 8, 300, 101, 99, s, zb, a, b);
-  draw_line_gouraud(10, 102, 8, 300, 102, 99, s, zb, a, b);
+  draw_line_phong(10, 100, 8, 300, 100, 99, s, zb, n_0, n_1, view, light, ambient, areflect, dreflect, sreflect);
+  draw_line_phong(10, 101, 8, 300, 101, 99, s, zb, n_0, n_1, view, light, ambient, areflect, dreflect, sreflect);
+  draw_line_phong(10, 102, 8, 300, 102, 99, s, zb, n_0, n_1, view, light, ambient, areflect, dreflect, sreflect);
+
   display(s);
   
 
   return 0;
-  }*/
+}*/

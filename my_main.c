@@ -126,6 +126,7 @@ void first_pass() {
   ====================*/
 struct vary_node ** second_pass() {
   //struct vary_node * knobs[num_frames];//=(struct vary_node **) malloc(sizeof(struct vary_node *));//calloc please
+  //printf("begin second pass\n");
   struct vary_node ** knobs=(struct vary_node **) calloc(sizeof(struct vary_node *), num_frames);
   int i=0;
   for (;i<lastop;i++) {

@@ -22,7 +22,7 @@ void create_hash_table(struct matrix * polygons) {
   int i=0;
   while (i<polygons->lastcol) {
     //sprintf %3.3lf
-    char key[22];
+    char key[25];
 
     //first vertex
     sprintf(key, "%3.3lf%3.3lf%3.3lf",polygons->m[0][i],polygons->m[1][i],polygons->m[2][i]);
@@ -39,7 +39,7 @@ void create_hash_table(struct matrix * polygons) {
     //second vertex
     i++;
     //printf("i incremented\n");
-    char key_one[22];
+    char key_one[25];
     //key_one[0]=0;
     sprintf(key_one,"%3.3lf%3.3lf%3.3lf",polygons->m[0][i],polygons->m[1][i],polygons->m[2][i]);
     
@@ -49,7 +49,7 @@ void create_hash_table(struct matrix * polygons) {
 
     //third vertex
     i++;
-    char key_two[22];
+    char key_two[25];
     //printf("made key_two\n");
     //printf("[%3.3lf%3.3lf%3.3lf]\n",polygons->m[0][i],polygons->m[1][i],polygons->m[2][i]);
     sprintf(key_two, "%3.3lf%3.3lf%3.3lf",polygons->m[0][i],polygons->m[1][i],polygons->m[2][i]);
@@ -80,11 +80,11 @@ void add_point_hash(char * point, double *vector) {
   if (s==NULL) {
     //printf("[add_point_hash] s is NULL\n");
     s=(HASH *)malloc(sizeof(HASH));
-    //printf("[add_point_hash] malloced s\n");
+    
     s->num_vectors=0;
-    s->vertex=(char *)calloc(sizeof(char),22);
+    s->vertex=(char *)calloc(sizeof(char),25);
     strcpy(s->vertex,point);
-    //s->vectors=(double **)malloc(sizeof(double *));
+    s->vectors=(double **)malloc(sizeof(double *));
 
     /*
     s->vectors[s->num_vectors]=(double *)malloc(sizeof(double)*3);
@@ -95,15 +95,18 @@ void add_point_hash(char * point, double *vector) {
     s->vectors[s->num_vectors]=vector;
     s->num_vectors++;
     HASH_ADD_KEYPTR(hh, vector_hash, s->vertex, strlen(s->vertex), s);
+    printf("[add_point_hash]\n");
   } else {
+    printf("[updated]\n");
     s->num_vectors++;
+    s->vectors=realloc(s->vectors,s->num_vectors*sizeof(double*));
     s->vectors[s->num_vectors-1]=vector;
     /*
     
     s->vectors[s->num_vectors-1]=(double *)malloc(sizeof(double)*3);;
 
     
-    //s->vectors=realloc(s->vectors,s->num_vectors*sizeof(double*));
+    //
     //s->vectors[s->num_vectors-1]=vector;
     printf("[add_point_hash]updated [%s]\n",point);
     */
@@ -152,7 +155,7 @@ void free_hash() {
       free(current_point->vectors[i]);//error because they have been freed already
       //printf("freed vector %d\n",i);
     }
-    //free(current_point->vectors);
+    free(current_point->vectors);
     free(current_point->vertex);
     HASH_DEL(vector_hash,current_point);
     free(current_point);
