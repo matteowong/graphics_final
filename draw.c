@@ -211,8 +211,12 @@ void scanline_convert_gouraud( struct matrix *points, int i, screen s, zbuffer z
     ((((int)(points->m[1][top]))-y)/distance0)*c_bot.r;*/
   double dc_0,dc_1,dc_0r,dc_0g,dc_0b,dc_1r,dc_1g,dc_1b;
   //printf("[gouraud] pre\n");
-  dc_0=distance0 > 0 ? 1/(float)distance0 : 0;
-  dc_1=distance1 > 0 ? 1/(float)distance1 : 0;
+  //(points->m[1][top]-points->m[1][mid])
+
+
+  /*
+  dc_0=(points->m[1][top]-points->m[1][bot]) > 0 ? 1/(points->m[1][top]-points->m[1][bot]) : 0;
+  dc_1=(points->m[1][mid]-points->m[1][bot]) > 0 ? 1/(points->m[1][mid]-points->m[1][bot]) : 0;
   //printf("[gouraud] divisions by d0 d1\n");
   dc_0r=(-c_bot.red*dc_0 + c_top.red*dc_0);
   dc_0g=(-c_bot.green*dc_0 + c_top.green*dc_0);
@@ -220,22 +224,64 @@ void scanline_convert_gouraud( struct matrix *points, int i, screen s, zbuffer z
 
   dc_1r=(-c_bot.red*dc_1 + c_mid.red*dc_1);
   dc_1g=(-c_bot.green*dc_1 + c_mid.green*dc_1);
-  dc_1b=(-c_bot.blue*dc_1 + c_mid.blue*dc_1);
+  dc_1b=(-c_bot.blue*dc_1 + c_mid.blue*dc_1);*/
+
+  double c0r,c0g,c0b,c1r,c1g,c1b;
+  c0r=c1r=c_bot.red;
+  c0g=c1g=c_bot.green;
+  c0b=c1b=c_bot.blue;
+
+  
+    
 
   while ( y <= (int)points->m[1][top] ) {
     
     //printf("\tx0: %0.2f x1: %0.2f y: %d\n", x0, x1, y);
     draw_line_gouraud(x0, y, z0, x1, y, z1, s, zb, c_0,c_1);
-    //printf("color 0: red:%d green:%d blue: %d\n",c_0.red,c_0.green,c_0.blue);
-    //printf("color 1: red:%d green:%d blue: %d\n",c_1.red,c_1.green,c_1.blue);
-    
-    c_0.red=(int) (c_0.red+dc_0r);
+    if (c_0.red>5 || c_1.red>5) {
+    printf("color 0: red:%d green:%d blue: %d\n",c_0.red,c_0.green,c_0.blue);
+    printf("color 1: red:%d green:%d blue: %d\n\n",c_1.red,c_1.green,c_1.blue);}
+
+    /*
+    c0r+=dc_0r;
+    c0g+=dc_0g;
+    c0b+=dc_0b;
+    c1r+=dc_1r;
+    c1g+=dc_1g;
+    c1b+=dc_1b;
+    */
+
+    c0r=(points->m[1][top]-points->m[1][bot]) > 0 ? (points->m[1][top]-y)/(points->m[1][top]-points->m[1][bot])*c_bot.red + (y-points->m[1][bot])/(points->m[1][top]-points->m[1][bot])*c_top.red : c0r;
+    c0g=(points->m[1][top]-points->m[1][bot]) > 0 ? (points->m[1][top]-y)/(points->m[1][top]-points->m[1][bot])*c_bot.green + (y-points->m[1][bot])/(points->m[1][top]-points->m[1][bot])*c_top.green : c0g;
+    c0b=(points->m[1][top]-points->m[1][bot]) > 0 ? (points->m[1][top]-y)/(points->m[1][top]-points->m[1][bot])*c_bot.blue + (y-points->m[1][bot])/(points->m[1][top]-points->m[1][bot])*c_top.blue : c0b;
+
+    if (!flip) {
+      c1r=(points->m[1][mid]-points->m[1][bot]) > 0 ? (points->m[1][mid]-y)/(points->m[1][mid]-points->m[1][bot])*c_bot.red + (y-points->m[1][bot])/(points->m[1][mid]-points->m[1][bot])*c_mid.red : c_mid.red;
+      c1g=(points->m[1][mid]-points->m[1][bot]) > 0 ? (points->m[1][mid]-y)/(points->m[1][mid]-points->m[1][bot])*c_bot.green + (y-points->m[1][bot])/(points->m[1][mid]-points->m[1][bot])*c_mid.green : c_mid.green;
+      c1b=(points->m[1][mid]-points->m[1][bot]) > 0 ? (points->m[1][mid]-y)/(points->m[1][mid]-points->m[1][bot])*c_bot.blue + (y-points->m[1][bot])/(points->m[1][mid]-points->m[1][bot])*c_mid.blue : c_mid.blue;
+    } else {
+      c1r=(points->m[1][top]-points->m[1][mid]) > 0 ? (points->m[1][top]-y)/(points->m[1][top]-points->m[1][mid])*c_mid.red + (y-points->m[1][mid])/(points->m[1][top]-points->m[1][mid])*c_top.red : c_top.red;
+      c1g=(points->m[1][top]-points->m[1][mid]) > 0 ? (points->m[1][top]-y)/(points->m[1][top]-points->m[1][mid])*c_mid.green + (y-points->m[1][mid])/(points->m[1][top]-points->m[1][mid])*c_top.green : c_top.green;
+      c1b=(points->m[1][top]-points->m[1][mid]) > 0 ? (points->m[1][top]-y)/(points->m[1][top]-points->m[1][mid])*c_mid.blue + (y-points->m[1][mid])/(points->m[1][top]-points->m[1][mid])*c_top.blue : c_top.blue;
+      
+    }
+      
+    c_0.red=(int) c0r;
+    c_0.green=(int) c0g;
+    c_0.blue=(int) c0b;
+
+    c_1.red=(int) c1r;
+    c_1.green=(int) c1g;
+    c_1.blue=(int) c1b;
+
+    /*
+    c_0.red=(int) (c_0.red+dc_0r);//maybe hte problem is integer rounding?
     c_0.green=(int) (c_0.green+dc_0g);
     c_0.blue=(int) (c_0.blue+dc_0b);
 
     c_1.red=(int) (c_1.red+dc_1r);
     c_1.green=(int) (c_1.green+dc_1g);
-    c_1.blue=(int) (c_1.blue+dc_1b);
+    c_1.blue=(int) (c_1.blue+dc_1b);*/
 
     x0+= dx0;
     x1+= dx1;
@@ -249,10 +295,11 @@ void scanline_convert_gouraud( struct matrix *points, int i, screen s, zbuffer z
       dz1 = distance2 > 0 ? (points->m[2][top]-points->m[2][mid])/distance2 : 0;
       //printf("[gouraud] flip: before 1/distance2\n");
 
-      dc_1= distance2 > 0 ? 1/(float)distance2 : 0;
+      /*
+      dc_1= (points->m[1][top]-points->m[1][mid]) > 0 ? 1/(points->m[1][top]-points->m[1][mid]) : 0;
       dc_1r=(-c_mid.red*dc_1 + c_top.red*dc_1);
       dc_1g=(-c_mid.green*dc_1 + c_top.green*dc_1);
-      dc_1b=(-c_mid.blue*dc_1 + c_top.blue*dc_1);
+      dc_1b=(-c_mid.blue*dc_1 + c_top.blue*dc_1);*/
       //printf("[gouraud] recalculated shadings\n");
       
       x1 = points->m[0][mid];
@@ -362,8 +409,8 @@ void scanline_convert_phong( struct matrix *points, int i, screen s, zbuffer zb,
   dz1 = distance1 > 0 ? (points->m[2][mid]-points->m[2][bot])/distance1 : 0;
 
   double dv_0,dv_1,dv_0x,dv_0y,dv_0z,dv_1x,dv_1y,dv_1z;
-  dv_0=distance0 > 0 ? 1/(double)distance0 : 0;
-  dv_1=distance1 > 0 ? 1/(double)distance1 : 0;
+  dv_0=(points->m[1][top]-points->m[1][bot]) > 0 ? 1/(points->m[1][top]-points->m[1][bot]): 0;
+  dv_1=(points->m[1][mid]-points->m[1][bot]) > 0 ? 1/(points->m[1][mid]-points->m[1][bot]) : 0;
 
   dv_0x=(-vnormal_b[0]*dv_0 + vnormal_t[0]*dv_0);
   dv_0y=(-vnormal_b[1]*dv_0 + vnormal_t[1]*dv_0);
@@ -403,7 +450,7 @@ void scanline_convert_phong( struct matrix *points, int i, screen s, zbuffer zb,
       dz1 = distance2 > 0 ? (points->m[2][top]-points->m[2][mid])/distance2 : 0;
       //printf("[gouraud] flip: before 1/distance2\n");
 
-      dv_1=distance2 > 0 ? 1/(double)distance2 : 0;
+      dv_1=(points->m[1][top]-points->m[1][mid]) > 0 ? 1/(points->m[1][top]-points->m[1][mid]) : 0;
       dv_1x=(-vnormal_m[0]*dv_1 + vnormal_t[0]*dv_1);
       dv_1y=(-vnormal_m[1]*dv_1 + vnormal_t[1]*dv_1);
       dv_1z=(-vnormal_m[2]*dv_1 + vnormal_t[2]*dv_1);
@@ -467,15 +514,17 @@ void draw_polygons(struct matrix *polygons, screen s, zbuffer zb,
     return;
   }
 
-  printf("drawing polygons\n");
+  //printf("drawing polygons\n");
 
   int point;
   double *normal;
 
   create_hash_table(polygons);
-  printf("made hash table\n");
+  //printf("made hash table\n");
   calculate_vnormals();
+  printf("\n\n----------------printing hash table----------------\n\n");
   print_hash();
+  printf("\n\n----------------end hash table----------------\n\n");
 
   for (point=0; point < polygons->lastcol-2; point+=3) {
 
@@ -1095,7 +1144,7 @@ void draw_line_gouraud(int x0, int y0, double z0,
     c.red=(int) ( (double)(x1-x)/(x1-x0)*c_0.red + (double)(x-x0)/(x1-x0)*c_1.red);
     c.green=(int) ( (double)(x1-x)/(x1-x0)*c_0.green + (double)(x-x0)/(x1-x0)*c_1.green);
     c.blue=(int) ( (double)(x1-x)/(x1-x0)*c_0.blue + (double)(x-x0)/(x1-x0)*c_1.blue);
-    printf("color: red:%d green:%d blue: %d\n",c.red,c.green,c.blue);
+    //printf("color: red:%d green:%d blue: %d\n",c.red,c.green,c.blue);
     z+=dz;
     x++;
   } //end drawing loop

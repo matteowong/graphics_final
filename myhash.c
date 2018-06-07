@@ -95,9 +95,9 @@ void add_point_hash(char * point, double *vector) {
     s->vectors[s->num_vectors]=vector;
     s->num_vectors++;
     HASH_ADD_KEYPTR(hh, vector_hash, s->vertex, strlen(s->vertex), s);
-    printf("[add_point_hash]\n");
+    //printf("[add_point_hash]\n");
   } else {
-    printf("[updated]\n");
+    //printf("[updated]\n");
     s->num_vectors++;
     s->vectors=realloc(s->vectors,s->num_vectors*sizeof(double*));
     s->vectors[s->num_vectors-1]=vector;
@@ -157,6 +157,7 @@ void free_hash() {
     }
     free(current_point->vectors);
     free(current_point->vertex);
+    current_point->num_vectors=0;
     HASH_DEL(vector_hash,current_point);
     free(current_point);
   }
@@ -182,10 +183,10 @@ void calculate_vnormals() {
 int main(int argc, char **argv) {
   struct matrix*polygons=new_matrix(4,1000);
   //add_box(polygons, 0, 10, 20, 30, 40, 50);
-  add_sphere(polygons,0,0,0,40,5);
+  add_sphere(polygons,0,0,0,200,10);
   printf("created sphere\n");
   create_hash_table(polygons);
-
+  calculate_vnormals();
   
   print_hash();
   printf("\n\nprint two\n\n");
@@ -193,4 +194,5 @@ int main(int argc, char **argv) {
   free_hash();
   free_matrix(polygons);
   return 0;
-}*/
+}
+*/
