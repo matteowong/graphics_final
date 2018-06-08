@@ -22,6 +22,7 @@ void print_vectors(double ** vectors, int num_vectors);
 void print_hash();
 void free_hash();
 void calculate_vnormals();
+void print_numvectors();
 double * lookup_point(char * key);
 
 #endif

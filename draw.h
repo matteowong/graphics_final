@@ -55,6 +55,10 @@ void draw_line_gouraud(int x0, int y0, double z0,
                int x1, int y1, double z1,
                screen s, zbuffer zb, color c_0, color c_1);
 
+void draw_line_gouraud2(int x0, int y0, double z0,
+               int x1, int y1, double z1,
+               screen s, zbuffer zb, color c_0, color c_1);
+
 void draw_line_phong(int x0, int y0, double z0,
                int x1, int y1, double z1,
 		       screen s, zbuffer zb, double * n_0, double * n_1,

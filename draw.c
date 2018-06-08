@@ -238,9 +238,9 @@ void scanline_convert_gouraud( struct matrix *points, int i, screen s, zbuffer z
     
     //printf("\tx0: %0.2f x1: %0.2f y: %d\n", x0, x1, y);
     draw_line_gouraud(x0, y, z0, x1, y, z1, s, zb, c_0,c_1);
-    if (c_0.red>5 || c_1.red>5) {
-    printf("color 0: red:%d green:%d blue: %d\n",c_0.red,c_0.green,c_0.blue);
-    printf("color 1: red:%d green:%d blue: %d\n\n",c_1.red,c_1.green,c_1.blue);}
+
+    //printf("color 0: red:%lf green:%lf blue: %lf\n",c0r,c0g,c0b);
+    //printf("color 1: red:%lf green:%lf blue: %lf\n\n",c1r,c1g,c1b);
 
     /*
     c0r+=dc_0r;
@@ -281,7 +281,8 @@ void scanline_convert_gouraud( struct matrix *points, int i, screen s, zbuffer z
 
     c_1.red=(int) (c_1.red+dc_1r);
     c_1.green=(int) (c_1.green+dc_1g);
-    c_1.blue=(int) (c_1.blue+dc_1b);*/
+    c_1.blue=(int) (c_1.blue+dc_1b);
+    */
 
     x0+= dx0;
     x1+= dx1;
@@ -295,11 +296,12 @@ void scanline_convert_gouraud( struct matrix *points, int i, screen s, zbuffer z
       dz1 = distance2 > 0 ? (points->m[2][top]-points->m[2][mid])/distance2 : 0;
       //printf("[gouraud] flip: before 1/distance2\n");
 
-      /*
+      /*      
       dc_1= (points->m[1][top]-points->m[1][mid]) > 0 ? 1/(points->m[1][top]-points->m[1][mid]) : 0;
       dc_1r=(-c_mid.red*dc_1 + c_top.red*dc_1);
       dc_1g=(-c_mid.green*dc_1 + c_top.green*dc_1);
-      dc_1b=(-c_mid.blue*dc_1 + c_top.blue*dc_1);*/
+      dc_1b=(-c_mid.blue*dc_1 + c_top.blue*dc_1);
+      */
       //printf("[gouraud] recalculated shadings\n");
       
       x1 = points->m[0][mid];
@@ -1092,6 +1094,124 @@ void draw_line(int x0, int y0, double z0,
   plot( s, zb, c, x1, y1, z );
 } //end draw_line
 
+
+
+
+
+
+
+void draw_line_gouraud2(int x0, int y0, double z0,
+               int x1, int y1, double z1,
+			screen s, zbuffer zb, color c_0, color c_1) {
+
+
+  int x, y, d, A, B;
+  int dy_east, dy_northeast, dx_east, dx_northeast, d_east, d_northeast;
+  int loop_start, loop_end;
+  double distance;
+  double z, dz;
+  color c;
+
+  //swap points if going right -> left
+  int xt, yt;
+  if (x0 > x1) {
+    xt = x0;
+    yt = y0;
+    z = z0;
+    c=c_0;
+    x0 = x1;
+    y0 = y1;
+    z0 = z1;
+    c_0=c_1;
+    x1 = xt;
+    y1 = yt;
+    z1 = z;
+    c_1=c;
+  }
+
+  x = x0;
+  y = y0;
+  A = 2 * (y1 - y0);
+  B = -2 * (x1 - x0);
+  int wide = 0;
+  int tall = 0;
+  //octants 1 and 8
+  if ( abs(x1 - x0) >= abs(y1 - y0) ) { //octant 1/8
+    wide = 1;
+    loop_start = x;
+    loop_end = x1;
+    dx_east = dx_northeast = 1;
+    dy_east = 0;
+    d_east = A;
+    distance = x1 - x;
+    if ( A > 0 ) { //octant 1
+      d = A + B/2;
+      dy_northeast = 1;
+      d_northeast = A + B;
+    }
+    else { //octant 8
+      d = A - B/2;
+      dy_northeast = -1;
+      d_northeast = A - B;
+    }
+  }//end octant 1/8
+  else { //octant 2/7
+    tall = 1;
+    dx_east = 0;
+    dx_northeast = 1;
+    distance = abs(y1 - y);
+    if ( A > 0 ) {     //octant 2
+      d = A/2 + B;
+      dy_east = dy_northeast = 1;
+      d_northeast = A + B;
+      d_east = B;
+      loop_start = y;
+      loop_end = y1;
+    }
+    else {     //octant 7
+      d = A/2 - B;
+      dy_east = dy_northeast = -1;
+      d_northeast = A - B;
+      d_east = -1 * B;
+      loop_start = y1;
+      loop_end = y;
+    }
+  }
+
+  z = z0;
+  dz = (z1 - z0) / distance;
+  //printf("\t(%d, %d) -> (%d, %d)\tdistance: %0.2f\tdz: %0.2f\tz: %0.2f\n", x0, y0, x1, y1, distance, dz, z);
+  c=c_0;
+  while ( loop_start < loop_end ) {
+
+    double t=loop_start;
+    plot( s, zb, c, x, y, z );
+    if ( (wide && ((A > 0 && d > 0) ||
+                   (A < 0 && d < 0)))
+         ||
+         (tall && ((A > 0 && d < 0 ) ||
+                   (A < 0 && d > 0) ))) {
+      y+= dy_northeast;
+      d+= d_northeast;
+      x+= dx_northeast;
+    }
+    else {
+      x+= dx_east;
+      y+= dy_east;
+      d+= d_east;
+    }
+
+    c.red=(int) ( (double)(loop_end-loop_start)/(distance)*c_0.red + (double)(loop_start-t)/(distance)*c_1.red);
+    c.green=(int) ( (double)(loop_end-loop_start)/(distance)*c_0.green + (double)(loop_start-t)/(distance)*c_1.green);
+    c.blue=(int) ( (double)(loop_end-loop_start)/(distance)*c_0.blue + (double)(loop_start-t)/(distance)*c_1.blue);
+
+    
+    z+= dz;
+    loop_start++;
+  } //end drawing loop
+  plot( s, zb, c, x1, y1, z );
+} //end draw_line
+
 //scanline_convert_phong
 //draw_line_phong
 //scanline_convert_gouraud
@@ -1144,7 +1264,7 @@ void draw_line_gouraud(int x0, int y0, double z0,
     c.red=(int) ( (double)(x1-x)/(x1-x0)*c_0.red + (double)(x-x0)/(x1-x0)*c_1.red);
     c.green=(int) ( (double)(x1-x)/(x1-x0)*c_0.green + (double)(x-x0)/(x1-x0)*c_1.green);
     c.blue=(int) ( (double)(x1-x)/(x1-x0)*c_0.blue + (double)(x-x0)/(x1-x0)*c_1.blue);
-    //printf("color: red:%d green:%d blue: %d\n",c.red,c.green,c.blue);
+    printf("color: red:%d green:%d blue: %d\n",c.red,c.green,c.blue);
     z+=dz;
     x++;
   } //end drawing loop
@@ -1261,17 +1381,32 @@ int main() {
   double n_1[3]={0, 0, 10};
   normalize(n_0);
   normalize(n_1);
-  printf("[draw line phong] normal0:\nx:%lf |y:%lf |z:%lf\n",n_0[0],n_0[1],n_0[2]);
-  printf("[draw line phong] normal1:\nx:%lf |y:%lf |z:%lf\n\n\n",n_1[0],n_1[1],n_1[2]);
+  //printf("[draw line phong] normal0:\nx:%lf |y:%lf |z:%lf\n",n_0[0],n_0[1],n_0[2]);
+  //printf("[draw line phong] normal1:\nx:%lf |y:%lf |z:%lf\n\n\n",n_1[0],n_1[1],n_1[2]);
+
+  color c0,c1;
+  c0.red=c1.red=5;
+  c0.green=30;
+  c0.blue=30;
+  c1.green=130;
+  c1.blue=130;
   
   screen s;
   zbuffer zb;
   clear_screen(s);
   clear_zbuffer(zb);
 
-  draw_line_phong(10, 100, 8, 300, 100, 99, s, zb, n_0, n_1, view, light, ambient, areflect, dreflect, sreflect);
-  draw_line_phong(10, 101, 8, 300, 101, 99, s, zb, n_0, n_1, view, light, ambient, areflect, dreflect, sreflect);
-  draw_line_phong(10, 102, 8, 300, 102, 99, s, zb, n_0, n_1, view, light, ambient, areflect, dreflect, sreflect);
+  draw_line_gouraud(10, 100, 8, 300, 100, 99, s, zb, c0, c1);
+  draw_line_gouraud(10, 101, 8, 300, 101, 99, s, zb, c0, c1);
+  draw_line_gouraud(10, 102, 8, 300, 102, 99, s, zb, c0, c1);
+
+  draw_line_gouraud2(10, 200, 8, 300, 200, 99, s, zb, c0, c1);
+  draw_line_gouraud2(10, 201, 8, 300, 201, 99, s, zb, c0, c1);
+  draw_line_gouraud2(10, 202, 8, 300, 202, 99, s, zb, c0, c1);
+
+  //draw_line_phong(10, 100, 8, 300, 100, 99, s, zb, n_0, n_1, view, light, ambient, areflect, dreflect, sreflect);
+  //draw_line_phong(10, 101, 8, 300, 101, 99, s, zb, n_0, n_1, view, light, ambient, areflect, dreflect, sreflect);
+  //draw_line_phong(10, 102, 8, 300, 102, 99, s, zb, n_0, n_1, view, light, ambient, areflect, dreflect, sreflect);
 
   display(s);
   

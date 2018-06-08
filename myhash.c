@@ -22,17 +22,19 @@ void create_hash_table(struct matrix * polygons) {
   int i=0;
   while (i<polygons->lastcol) {
     //sprintf %3.3lf
+    printf("polygon: %d\n",i/3);
     char key[25];
 
-    //first vertex
-    sprintf(key, "%3.3lf%3.3lf%3.3lf",polygons->m[0][i],polygons->m[1][i],polygons->m[2][i]);
     double *normal=calculate_normal(polygons, i);
     normalize(normal);
+    
     double *normal_one=calculate_normal(polygons, i);
     normalize(normal_one);
     double *normal_two=calculate_normal(polygons, i);
     normalize(normal_two);
     //printf("[create hash] normalized first vector\n");
+
+    sprintf(key, "%3.3lf%3.3lf%3.3lf",polygons->m[0][i],polygons->m[1][i],polygons->m[2][i]);
     add_point_hash(key, normal);
     //printf("[create hash loop %d] added first point\n",i);
     
@@ -50,8 +52,7 @@ void create_hash_table(struct matrix * polygons) {
     //third vertex
     i++;
     char key_two[25];
-    //printf("made key_two\n");
-    //printf("[%3.3lf%3.3lf%3.3lf]\n",polygons->m[0][i],polygons->m[1][i],polygons->m[2][i]);
+
     sprintf(key_two, "%3.3lf%3.3lf%3.3lf",polygons->m[0][i],polygons->m[1][i],polygons->m[2][i]);
     //printf("sprintfed\n");
     add_point_hash(key_two, normal_two);
@@ -82,7 +83,7 @@ void add_point_hash(char * point, double *vector) {
     s=(HASH *)malloc(sizeof(HASH));
     
     s->num_vectors=0;
-    s->vertex=(char *)calloc(sizeof(char),25);
+    s->vertex=(char *)calloc(sizeof(char),26);
     strcpy(s->vertex,point);
     s->vectors=(double **)malloc(sizeof(double *));
 
@@ -98,9 +99,24 @@ void add_point_hash(char * point, double *vector) {
     //printf("[add_point_hash]\n");
   } else {
     //printf("[updated]\n");
+    int i;
+    int dup=0;
+    /*
+    for (i=0;i<s->num_vectors && !dup;i++) {
+
+      if ((int) (s->vectors[i][0]*1000)==(int)(vector[0]*1000) &&
+	  (int) (s->vectors[i][1]*1000)==(int)(vector[1]*1000) &&
+	  (int) (s->vectors[i][2]*1000)==(int)(vector[2]*1000))
+	dup=1;
+	}*/
+
+    if (dup) {
+      printf("duplicate\n");
+    } else {
     s->num_vectors++;
     s->vectors=realloc(s->vectors,s->num_vectors*sizeof(double*));
     s->vectors[s->num_vectors-1]=vector;
+    }
     /*
     
     s->vectors[s->num_vectors-1]=(double *)malloc(sizeof(double)*3);;
@@ -126,16 +142,23 @@ void print_vectors(double ** vectors, int num_vectors) {
 
   }
 
+}
 
+void print_numvectors() {
+  HASH * s;
+  for (s=vector_hash; s!=NULL; s=s->hh.next) {
+    printf("point [%s]\n",s->vertex);
+    printf("num vectors: %d\n\n",s->num_vectors);
+  }
 }
 
 void print_hash() {
 
   HASH * s;
   for (s=vector_hash; s!=NULL; s=s->hh.next) {
-    printf("point [%s]\n",s->vertex);
+    printf("-----------point [%s]-----------\n",s->vertex);
     print_vectors(s->vectors,s->num_vectors);
-    printf("vertex normal:\nx:%lf |y:%lf |z:%lf\n",s->vnormal[0],s->vnormal[1],s->vnormal[2]);
+    printf("vertex normal:\nx:%lf |y:%lf |z:%lf\n\n",s->vnormal[0],s->vnormal[1],s->vnormal[2]);
   }
 
 }
@@ -179,7 +202,7 @@ void calculate_vnormals() {
   }
 }
 
-/*
+
 int main(int argc, char **argv) {
   struct matrix*polygons=new_matrix(4,1000);
   //add_box(polygons, 0, 10, 20, 30, 40, 50);
@@ -189,10 +212,11 @@ int main(int argc, char **argv) {
   calculate_vnormals();
   
   print_hash();
-  printf("\n\nprint two\n\n");
-  print_hash();
+  //print_numvectors();
+  
   free_hash();
   free_matrix(polygons);
   return 0;
 }
-*/
+
+
