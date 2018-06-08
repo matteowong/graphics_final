@@ -1337,7 +1337,7 @@ void draw_line_phong(int x0, int y0, double z0,
 } //end draw_line
 
 
-/*
+
 int main() {
 
 
@@ -1396,20 +1396,103 @@ int main() {
   clear_screen(s);
   clear_zbuffer(zb);
 
-  draw_line_gouraud(10, 100, 8, 300, 100, 99, s, zb, c0, c1);
-  draw_line_gouraud(10, 101, 8, 300, 101, 99, s, zb, c0, c1);
-  draw_line_gouraud(10, 102, 8, 300, 102, 99, s, zb, c0, c1);
+  //draw_line_gouraud(10, 100, 8, 300, 100, 99, s, zb, c0, c1);
+  //draw_line_gouraud(10, 101, 8, 300, 101, 99, s, zb, c0, c1);
+  //draw_line_gouraud(10, 102, 8, 300, 102, 99, s, zb, c0, c1);
 
-  draw_line_gouraud2(10, 200, 8, 300, 200, 99, s, zb, c0, c1);
-  draw_line_gouraud2(10, 201, 8, 300, 201, 99, s, zb, c0, c1);
-  draw_line_gouraud2(10, 202, 8, 300, 202, 99, s, zb, c0, c1);
+  //draw_line_gouraud2(10, 200, 8, 300, 200, 99, s, zb, c0, c1);
+  //draw_line_gouraud2(10, 201, 8, 300, 201, 99, s, zb, c0, c1);
+  //draw_line_gouraud2(10, 202, 8, 300, 202, 99, s, zb, c0, c1);
 
   //draw_line_phong(10, 100, 8, 300, 100, 99, s, zb, n_0, n_1, view, light, ambient, areflect, dreflect, sreflect);
   //draw_line_phong(10, 101, 8, 300, 101, 99, s, zb, n_0, n_1, view, light, ambient, areflect, dreflect, sreflect);
   //draw_line_phong(10, 102, 8, 300, 102, 99, s, zb, n_0, n_1, view, light, ambient, areflect, dreflect, sreflect);
 
-  display(s);
-  
+  struct matrix * edges=new_matrix(4,1000);
+  add_cylinder(edges, 250, 50, 0, 50, 200, 30);
+  draw_lines(edges, s, zb, c0);
 
+  display(s);
+  free(edges);
   return 0;
-}*/
+}
+
+
+struct matrix * generate_cylinder(double cx, double cy, double cz, double r, double h, int step) {
+
+  struct matrix * points = new_matrix(4, step*h);
+  double x,height,z;
+  int rot;
+  for (height=cy;height<h;height++) {
+
+    for (rot=0;rot<step;rot++) {
+      double t = (double)rot/step;
+      x=r*cos(2*M_PI*t)+cx;
+      z=r*sin(2*M_PI*t)+cz;
+      add_point(points,x,height,z);
+
+    }
+
+  }
+  return points;
+
+}
+
+void add_cylinder(struct matrix * edges, double cx, double cy, double cz, double r, double h, int step) {
+  struct matrix * points=generate_cylinder(cx,cy,cz,r,h,step);
+
+  int p0, p1, p2, p3;
+  int height, j;
+
+  for (height=0;height<h;height++) {
+
+    for (j=0;j<step;j++) {
+      p0=step*height+j;
+      p2=step*(height+1)+j;
+      if (j==step-1) {
+	p1=(step*height);
+	p3=step*(height+1);
+      } else {
+	p1=p0+1;
+	p3=p2+1;
+      }
+
+      add_polygon( edges, points->m[0][p0],
+                   points->m[1][p0],
+                   points->m[2][p0],
+                   points->m[0][p1],
+                   points->m[1][p1],
+                   points->m[2][p1],
+                   points->m[0][p3],
+                   points->m[1][p3],
+                   points->m[2][p3]);
+      add_polygon( edges, points->m[0][p0],
+                   points->m[1][p0],
+                   points->m[2][p0],
+                   points->m[0][p3],
+                   points->m[1][p3],
+                   points->m[2][p3],
+                   points->m[0][p2],
+                   points->m[1][p2],
+                   points->m[2][p2]);
+      
+    }
+
+
+
+  }
+
+
+
+
+
+
+  /*
+  int i=0;
+  while (i<points->lastcol){
+    add_edge(edges,points->m[0][i],points->m[1][i],points->m[2][i],points->m[0][i]+1,points->m[1][i]+1,points->m[2][i]+1);
+    i++;
+    }*/
+  free(points);
+}
+

@@ -202,7 +202,7 @@ void calculate_vnormals() {
   }
 }
 
-
+/*
 int main(int argc, char **argv) {
   struct matrix*polygons=new_matrix(4,1000);
   //add_box(polygons, 0, 10, 20, 30, 40, 50);
@@ -220,3 +220,4 @@ int main(int argc, char **argv) {
 }
 
 
+*/
