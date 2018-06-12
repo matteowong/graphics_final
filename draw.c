@@ -8,7 +8,6 @@
 #include "matrix.h"
 #include "math.h"
 #include "gmath.h"
-#include "myhash.h"
 
 /*======== void scanline_convert() ==========
   Inputs: struct matrix *points
@@ -112,365 +111,6 @@ void scanline_convert( struct matrix *points, int i, screen s, zbuffer zb, color
   }//end scanline loop
 }
 
-
-void scanline_convert_gouraud( struct matrix *points, int i, screen s, zbuffer zb, double *view, double light[2][3], color ambient, double *areflect, double *dreflect, double *sreflect) {
-
-  int top, mid, bot, y;
-  int distance0, distance1, distance2;
-  double x0, x1, y0, y1, y2, dx0, dx1, z0, z1, dz0, dz1;
-  int flip = 0;
-
-  z0 = z1 = dz0 = dz1 = 0;
-
-  y0 = points->m[1][i];
-  y1 = points->m[1][i+1];
-  y2 = points->m[1][i+2];
-
-  /* color c; */
-  /* c.red = (23 * (i/3))%255; */
-  /* c.green = (109 * (i/3))%255; */
-  /* c.blue = (c.blue+(227 * (i/3)))%255; */
-
-  //find bot, mid, top
-  if ( y0 <= y1 && y0 <= y2) {
-    bot = i;
-    if (y1 <= y2) {
-      mid = i+1;
-      top = i+2;
-    }
-    else {
-      mid = i+2;
-      top = i+1;
-    }
-  }//end y0 bottom
-  else if (y1 <= y0 && y1 <= y2) {
-    bot = i+1;
-    if (y0 <= y2) {
-      mid = i;
-      top = i+2;
-    }
-    else {
-      mid = i+2;
-      top = i;
-    }
-  }//end y1 bottom
-  else {
-    bot = i+2;
-    if (y0 <= y1) {
-      mid = i;
-      top = i+1;
-    }
-    else {
-      mid = i+1;
-      top = i;
-    }
-  }//end y2 bottom
-  //printf("ybot: %0.2f, ymid: %0.2f, ytop: %0.2f\n", (points->m[1][bot]),(points->m[1][mid]), (points->m[1][top]));
-  /* printf("bot: (%0.2f, %0.2f, %0.2f) mid: (%0.2f, %0.2f, %0.2f) top: (%0.2f, %0.2f, %0.2f)\n", */
-
-  color c_bot;
-  color c_mid;
-  color c_top;
-  
-  //calculate bottom color
-  char key[25];
-  sprintf(key, "%3.3lf%3.3lf%3.3lf",points->m[0][bot],points->m[1][bot],points->m[2][bot]);
-  double * vnormal_b=lookup_point(key);
-  c_bot=get_lighting(vnormal_b, view, ambient, light, areflect, dreflect, sreflect);
-  key[0]=0;
-  
-  sprintf(key, "%3.3lf%3.3lf%3.3lf",points->m[0][mid],points->m[1][mid],points->m[2][mid]);
-  double * vnormal_m=lookup_point(key);
-  c_mid=get_lighting(vnormal_m, view, ambient, light, areflect, dreflect, sreflect);
-  key[0]=0;
-  
-  sprintf(key, "%3.3lf%3.3lf%3.3lf",points->m[0][top],points->m[1][top],points->m[2][top]);
-  double * vnormal_t=lookup_point(key);
-  c_top=get_lighting(vnormal_t, view, ambient, light, areflect, dreflect, sreflect);
-  
-  x0 = points->m[0][bot];
-  x1 = points->m[0][bot];
-  z0 = points->m[2][bot];
-  z1 = points->m[2][bot];
-  y = (int)(points->m[1][bot]);
-
-  distance0 = (int)(points->m[1][top]) - y;
-  distance1 = (int)(points->m[1][mid]) - y;
-  distance2 = (int)(points->m[1][top]) - (int)(points->m[1][mid]);
-
-  //printf("distance0: %d distance1: %d distance2: %d\n", distance0, distance1, distance2);
-  dx0 = distance0 > 0 ? (points->m[0][top]-points->m[0][bot])/distance0 : 0;
-  dx1 = distance1 > 0 ? (points->m[0][mid]-points->m[0][bot])/distance1 : 0;
-  dz0 = distance0 > 0 ? (points->m[2][top]-points->m[2][bot])/distance0 : 0;
-  dz1 = distance1 > 0 ? (points->m[2][mid]-points->m[2][bot])/distance1 : 0;
-
-  //calculate colors using c_bot, c_mid, c_top
-  color c_0=c_bot;
-  color c_1=c_bot;
-  /*c_0.r=((y-((int)(points->m[1][bot])))/distance0)*c_top.r+
-    ((((int)(points->m[1][top]))-y)/distance0)*c_bot.r;*/
-  double dc_0,dc_1,dc_0r,dc_0g,dc_0b,dc_1r,dc_1g,dc_1b;
-  //printf("[gouraud] pre\n");
-  //(points->m[1][top]-points->m[1][mid])
-
-
-  /*
-  dc_0=(points->m[1][top]-points->m[1][bot]) > 0 ? 1/(points->m[1][top]-points->m[1][bot]) : 0;
-  dc_1=(points->m[1][mid]-points->m[1][bot]) > 0 ? 1/(points->m[1][mid]-points->m[1][bot]) : 0;
-  //printf("[gouraud] divisions by d0 d1\n");
-  dc_0r=(-c_bot.red*dc_0 + c_top.red*dc_0);
-  dc_0g=(-c_bot.green*dc_0 + c_top.green*dc_0);
-  dc_0b=(-c_bot.blue*dc_0 + c_top.blue*dc_0);
-
-  dc_1r=(-c_bot.red*dc_1 + c_mid.red*dc_1);
-  dc_1g=(-c_bot.green*dc_1 + c_mid.green*dc_1);
-  dc_1b=(-c_bot.blue*dc_1 + c_mid.blue*dc_1);*/
-
-  double c0r,c0g,c0b,c1r,c1g,c1b;
-  c0r=c1r=c_bot.red;
-  c0g=c1g=c_bot.green;
-  c0b=c1b=c_bot.blue;
-
-  
-    
-
-  while ( y <= (int)points->m[1][top] ) {
-    
-    //printf("\tx0: %0.2f x1: %0.2f y: %d\n", x0, x1, y);
-    draw_line_gouraud(x0, y, z0, x1, y, z1, s, zb, c_0,c_1);
-
-    //printf("color 0: red:%lf green:%lf blue: %lf\n",c0r,c0g,c0b);
-    //printf("color 1: red:%lf green:%lf blue: %lf\n\n",c1r,c1g,c1b);
-
-    /*
-    c0r+=dc_0r;
-    c0g+=dc_0g;
-    c0b+=dc_0b;
-    c1r+=dc_1r;
-    c1g+=dc_1g;
-    c1b+=dc_1b;
-    */
-
-    c0r=(points->m[1][top]-points->m[1][bot]) > 0 ? (points->m[1][top]-y)/(points->m[1][top]-points->m[1][bot])*c_bot.red + (y-points->m[1][bot])/(points->m[1][top]-points->m[1][bot])*c_top.red : c0r;
-    c0g=(points->m[1][top]-points->m[1][bot]) > 0 ? (points->m[1][top]-y)/(points->m[1][top]-points->m[1][bot])*c_bot.green + (y-points->m[1][bot])/(points->m[1][top]-points->m[1][bot])*c_top.green : c0g;
-    c0b=(points->m[1][top]-points->m[1][bot]) > 0 ? (points->m[1][top]-y)/(points->m[1][top]-points->m[1][bot])*c_bot.blue + (y-points->m[1][bot])/(points->m[1][top]-points->m[1][bot])*c_top.blue : c0b;
-
-    if (!flip) {
-      c1r=(points->m[1][mid]-points->m[1][bot]) > 0 ? (points->m[1][mid]-y)/(points->m[1][mid]-points->m[1][bot])*c_bot.red + (y-points->m[1][bot])/(points->m[1][mid]-points->m[1][bot])*c_mid.red : c_mid.red;
-      c1g=(points->m[1][mid]-points->m[1][bot]) > 0 ? (points->m[1][mid]-y)/(points->m[1][mid]-points->m[1][bot])*c_bot.green + (y-points->m[1][bot])/(points->m[1][mid]-points->m[1][bot])*c_mid.green : c_mid.green;
-      c1b=(points->m[1][mid]-points->m[1][bot]) > 0 ? (points->m[1][mid]-y)/(points->m[1][mid]-points->m[1][bot])*c_bot.blue + (y-points->m[1][bot])/(points->m[1][mid]-points->m[1][bot])*c_mid.blue : c_mid.blue;
-    } else {
-      c1r=(points->m[1][top]-points->m[1][mid]) > 0 ? (points->m[1][top]-y)/(points->m[1][top]-points->m[1][mid])*c_mid.red + (y-points->m[1][mid])/(points->m[1][top]-points->m[1][mid])*c_top.red : c_top.red;
-      c1g=(points->m[1][top]-points->m[1][mid]) > 0 ? (points->m[1][top]-y)/(points->m[1][top]-points->m[1][mid])*c_mid.green + (y-points->m[1][mid])/(points->m[1][top]-points->m[1][mid])*c_top.green : c_top.green;
-      c1b=(points->m[1][top]-points->m[1][mid]) > 0 ? (points->m[1][top]-y)/(points->m[1][top]-points->m[1][mid])*c_mid.blue + (y-points->m[1][mid])/(points->m[1][top]-points->m[1][mid])*c_top.blue : c_top.blue;
-      
-    }
-      
-    c_0.red=(int) c0r;
-    c_0.green=(int) c0g;
-    c_0.blue=(int) c0b;
-
-    c_1.red=(int) c1r;
-    c_1.green=(int) c1g;
-    c_1.blue=(int) c1b;
-
-    /*
-    c_0.red=(int) (c_0.red+dc_0r);//maybe hte problem is integer rounding?
-    c_0.green=(int) (c_0.green+dc_0g);
-    c_0.blue=(int) (c_0.blue+dc_0b);
-
-    c_1.red=(int) (c_1.red+dc_1r);
-    c_1.green=(int) (c_1.green+dc_1g);
-    c_1.blue=(int) (c_1.blue+dc_1b);
-    */
-
-    x0+= dx0;
-    x1+= dx1;
-    z0+= dz0;
-    z1+= dz1;
-    y++;
-
-    if ( !flip && y >= (int)(points->m[1][mid]) ) {
-      flip = 1;
-      dx1 = distance2 > 0 ? (points->m[0][top]-points->m[0][mid])/distance2 : 0;
-      dz1 = distance2 > 0 ? (points->m[2][top]-points->m[2][mid])/distance2 : 0;
-      //printf("[gouraud] flip: before 1/distance2\n");
-
-      /*      
-      dc_1= (points->m[1][top]-points->m[1][mid]) > 0 ? 1/(points->m[1][top]-points->m[1][mid]) : 0;
-      dc_1r=(-c_mid.red*dc_1 + c_top.red*dc_1);
-      dc_1g=(-c_mid.green*dc_1 + c_top.green*dc_1);
-      dc_1b=(-c_mid.blue*dc_1 + c_top.blue*dc_1);
-      */
-      //printf("[gouraud] recalculated shadings\n");
-      
-      x1 = points->m[0][mid];
-      z1 = points->m[2][mid];
-      c_1=c_mid;
-    }//end flip code
-  }//end scanline loop
-  //printf("end scanline loop\n");
-}
-
-
-//calculate color @ every pixel
-void scanline_convert_phong( struct matrix *points, int i, screen s, zbuffer zb, double *view, double light[2][3], color ambient, double *areflect, double *dreflect, double *sreflect) {
-
-  int top, mid, bot, y;
-  int distance0, distance1, distance2;
-  double x0, x1, y0, y1, y2, dx0, dx1, z0, z1, dz0, dz1;
-  int flip = 0;
-
-  z0 = z1 = dz0 = dz1 = 0;
-
-  y0 = points->m[1][i];
-  y1 = points->m[1][i+1];
-  y2 = points->m[1][i+2];
-
-  /* color c; */
-  /* c.red = (23 * (i/3))%255; */
-  /* c.green = (109 * (i/3))%255; */
-  /* c.blue = (c.blue+(227 * (i/3)))%255; */
-
-  //find bot, mid, top
-  if ( y0 <= y1 && y0 <= y2) {
-    bot = i;
-    if (y1 <= y2) {
-      mid = i+1;
-      top = i+2;
-    }
-    else {
-      mid = i+2;
-      top = i+1;
-    }
-  }//end y0 bottom
-  else if (y1 <= y0 && y1 <= y2) {
-    bot = i+1;
-    if (y0 <= y2) {
-      mid = i;
-      top = i+2;
-    }
-    else {
-      mid = i+2;
-      top = i;
-    }
-  }//end y1 bottom
-  else {
-    bot = i+2;
-    if (y0 <= y1) {
-      mid = i;
-      top = i+1;
-    }
-    else {
-      mid = i+1;
-      top = i;
-    }
-  }//end y2 bottom
-  //printf("ybot: %0.2f, ymid: %0.2f, ytop: %0.2f\n", (points->m[1][bot]),(points->m[1][mid]), (points->m[1][top]));
-  /* printf("bot: (%0.2f, %0.2f, %0.2f) mid: (%0.2f, %0.2f, %0.2f) top: (%0.2f, %0.2f, %0.2f)\n", */
-
-
-  char key[25];
-  sprintf(key, "%3.3lf%3.3lf%3.3lf",points->m[0][bot],points->m[1][bot],points->m[2][bot]);
-  double * vnormal_b=lookup_point(key);
-  
-  key[0]=0;
-  
-  sprintf(key, "%3.3lf%3.3lf%3.3lf",points->m[0][mid],points->m[1][mid],points->m[2][mid]);
-  double * vnormal_m=lookup_point(key);
-  
-  key[0]=0;
-  
-  sprintf(key, "%3.3lf%3.3lf%3.3lf",points->m[0][top],points->m[1][top],points->m[2][top]);
-  double * vnormal_t=lookup_point(key);
-
-  double normal_0[3];
-  normal_0[0]=vnormal_b[0];
-  normal_0[1]=vnormal_b[1];
-  normal_0[2]=vnormal_b[2];
-  
-  double normal_1[3];
-  normal_1[0]=vnormal_b[0];
-  normal_1[1]=vnormal_b[1];
-  normal_1[2]=vnormal_b[2];
-  
-  x0 = points->m[0][bot];
-  x1 = points->m[0][bot];
-  z0 = points->m[2][bot];
-  z1 = points->m[2][bot];
-  y = (int)(points->m[1][bot]);
-
-  distance0 = (int)(points->m[1][top]) - y;
-  distance1 = (int)(points->m[1][mid]) - y;
-  distance2 = (int)(points->m[1][top]) - (int)(points->m[1][mid]);
-
-  //printf("distance0: %d distance1: %d distance2: %d\n", distance0, distance1, distance2);
-  dx0 = distance0 > 0 ? (points->m[0][top]-points->m[0][bot])/distance0 : 0;
-  dx1 = distance1 > 0 ? (points->m[0][mid]-points->m[0][bot])/distance1 : 0;
-  dz0 = distance0 > 0 ? (points->m[2][top]-points->m[2][bot])/distance0 : 0;
-  dz1 = distance1 > 0 ? (points->m[2][mid]-points->m[2][bot])/distance1 : 0;
-
-  double dv_0,dv_1,dv_0x,dv_0y,dv_0z,dv_1x,dv_1y,dv_1z;
-  dv_0=(points->m[1][top]-points->m[1][bot]) > 0 ? 1/(points->m[1][top]-points->m[1][bot]): 0;
-  dv_1=(points->m[1][mid]-points->m[1][bot]) > 0 ? 1/(points->m[1][mid]-points->m[1][bot]) : 0;
-
-  dv_0x=(-vnormal_b[0]*dv_0 + vnormal_t[0]*dv_0);
-  dv_0y=(-vnormal_b[1]*dv_0 + vnormal_t[1]*dv_0);
-  dv_0z=(-vnormal_b[2]*dv_0 + vnormal_t[2]*dv_0);
-
-  dv_1x=(-vnormal_b[0]*dv_1 + vnormal_m[0]*dv_1);
-  dv_1y=(-vnormal_b[1]*dv_1 + vnormal_m[1]*dv_1);
-  dv_1z=(-vnormal_b[2]*dv_1 + vnormal_m[2]*dv_1);
-
-  while ( y <= (int)points->m[1][top] ) {
-    
-    //printf("\tx0: %0.2f x1: %0.2f y: %d\n", x0, x1, y);
-    draw_line_phong(x0, y, z0, x1, y, z1, s, zb, normal_0,normal_1, view, light, ambient, areflect, dreflect, sreflect);
-    //printf("color 0: red:%d green:%d blue: %d\n",c_0.red,c_0.green,c_0.blue);
-    //printf("color 1: red:%d green:%d blue: %d\n",c_1.red,c_1.green,c_1.blue);
-
-
-    //normal_0, normal_1
-
-    normal_0[0]+=dv_0x;
-    normal_0[1]+=dv_0y;
-    normal_0[2]+=dv_0z;
-
-    normal_1[0]+=dv_1x;
-    normal_1[1]+=dv_1y;
-    normal_1[2]+=dv_1z;
-
-    x0+= dx0;
-    x1+= dx1;
-    z0+= dz0;
-    z1+= dz1;
-    y++;
-
-    if ( !flip && y >= (int)(points->m[1][mid]) ) {
-      flip = 1;
-      dx1 = distance2 > 0 ? (points->m[0][top]-points->m[0][mid])/distance2 : 0;
-      dz1 = distance2 > 0 ? (points->m[2][top]-points->m[2][mid])/distance2 : 0;
-      //printf("[gouraud] flip: before 1/distance2\n");
-
-      dv_1=(points->m[1][top]-points->m[1][mid]) > 0 ? 1/(points->m[1][top]-points->m[1][mid]) : 0;
-      dv_1x=(-vnormal_m[0]*dv_1 + vnormal_t[0]*dv_1);
-      dv_1y=(-vnormal_m[1]*dv_1 + vnormal_t[1]*dv_1);
-      dv_1z=(-vnormal_m[2]*dv_1 + vnormal_t[2]*dv_1);
-      
-      x1 = points->m[0][mid];
-      z1 = points->m[2][mid];
-      normal_1[0]=vnormal_m[0];
-      normal_1[1]=vnormal_m[1];
-      normal_1[2]=vnormal_m[2];
-      //c_1=c_mid;
-    }//end flip code
-  }//end scanline loop
-  //printf("end scanline loop\n");
-}
-
-
-
-
 /*======== void add_polygon() ==========
   Inputs:   struct matrix *surfaces
   double x0
@@ -516,39 +156,23 @@ void draw_polygons(struct matrix *polygons, screen s, zbuffer zb,
     return;
   }
 
-  //printf("drawing polygons\n");
-
+  print_matrix(polygons);
+  
   int point;
   double *normal;
-
-  create_hash_table(polygons);
-  //printf("made hash table\n");
-  calculate_vnormals();
-  printf("\n\n----------------printing hash table----------------\n\n");
-  print_hash();
-  printf("\n\n----------------end hash table----------------\n\n");
 
   for (point=0; point < polygons->lastcol-2; point+=3) {
 
     normal = calculate_normal(polygons, point);
-    normalize(normal);
-    //printf("vertex normal:\nx:%lf |y:%lf |z:%lf\n",normal[0],normal[1],normal[2]);
 
     if ( dot_product(normal, view) > 0 ) {
 
-      //flat
-      //color c = get_lighting(normal, view, ambient, light, areflect, dreflect, sreflect);
-      //scanline_convert(polygons, point, s, zb, c);
+      color c = get_lighting(normal, view, ambient, light, areflect, dreflect, sreflect);
+      //color c;
+      //c.red=c.green=c.blue=0;
 
-      //gouraud
-      scanline_convert_gouraud(polygons, point, s, zb, view, light, ambient, areflect, dreflect, sreflect);
+      scanline_convert(polygons, point, s, zb, c);
 
-      //phong
-      //scanline_convert_phong(polygons, point, s, zb, view, light, ambient, areflect, dreflect, sreflect);
-
-
-      
-	/*
       draw_line( polygons->m[0][point],
                  polygons->m[1][point],
                  polygons->m[2][point],
@@ -569,19 +193,10 @@ void draw_polygons(struct matrix *polygons, screen s, zbuffer zb,
                  polygons->m[0][point+2],
                  polygons->m[1][point+2],
                  polygons->m[2][point+2],
-                 s, zb, c);*/
+                 s, zb, c);
     }
-    //printf("end normal check\n");
   }
-  //printf("pre free hash\n");
-  free_hash();
-  //printf("draw polygons done\n");
-
 }
-
-
-
-
 
 /*======== void add_box() ==========
   Inputs:   struct matrix * edges
@@ -1094,249 +709,115 @@ void draw_line(int x0, int y0, double z0,
   plot( s, zb, c, x1, y1, z );
 } //end draw_line
 
+struct matrix * generate_cylinder(double cx, double cy, double cz, double r, double h0, int step) {
 
+  int h=(int)h0;
+  struct matrix * points = new_matrix(4, step*h);
+  double x,height,z;
+  int rot;
+  height=0;
 
+  int heightstep=1;
+  //if (h0>99)
+  //heightstep=5;
+  while (height<=h) {
+    printf("height: %lf\n",height);
+    //printf("height: %lf\n",height);
+    for (rot=0;rot<step;rot++) {
+      double t = (double)rot/step;
+      x=r*cos(2*M_PI*t)+cx;
+      z=r*sin(2*M_PI*t)+cz;//problem is here
+      printf("inner rot height: %lf\n",height);
+      add_point(points,x,height+cy,z);
+      //printf("x: %lf, y: %lf, z: %lf\n",x,height,z);
 
-
-
-
-void draw_line_gouraud2(int x0, int y0, double z0,
-               int x1, int y1, double z1,
-			screen s, zbuffer zb, color c_0, color c_1) {
-
-
-  int x, y, d, A, B;
-  int dy_east, dy_northeast, dx_east, dx_northeast, d_east, d_northeast;
-  int loop_start, loop_end;
-  double distance;
-  double z, dz;
-  color c;
-
-  //swap points if going right -> left
-  int xt, yt;
-  if (x0 > x1) {
-    xt = x0;
-    yt = y0;
-    z = z0;
-    c=c_0;
-    x0 = x1;
-    y0 = y1;
-    z0 = z1;
-    c_0=c_1;
-    x1 = xt;
-    y1 = yt;
-    z1 = z;
-    c_1=c;
+    }
+    height+=heightstep;
   }
+  return points;
 
-  x = x0;
-  y = y0;
-  A = 2 * (y1 - y0);
-  B = -2 * (x1 - x0);
-  int wide = 0;
-  int tall = 0;
-  //octants 1 and 8
-  if ( abs(x1 - x0) >= abs(y1 - y0) ) { //octant 1/8
-    wide = 1;
-    loop_start = x;
-    loop_end = x1;
-    dx_east = dx_northeast = 1;
-    dy_east = 0;
-    d_east = A;
-    distance = x1 - x;
-    if ( A > 0 ) { //octant 1
-      d = A + B/2;
-      dy_northeast = 1;
-      d_northeast = A + B;
-    }
-    else { //octant 8
-      d = A - B/2;
-      dy_northeast = -1;
-      d_northeast = A - B;
-    }
-  }//end octant 1/8
-  else { //octant 2/7
-    tall = 1;
-    dx_east = 0;
-    dx_northeast = 1;
-    distance = abs(y1 - y);
-    if ( A > 0 ) {     //octant 2
-      d = A/2 + B;
-      dy_east = dy_northeast = 1;
-      d_northeast = A + B;
-      d_east = B;
-      loop_start = y;
-      loop_end = y1;
-    }
-    else {     //octant 7
-      d = A/2 - B;
-      dy_east = dy_northeast = -1;
-      d_northeast = A - B;
-      d_east = -1 * B;
-      loop_start = y1;
-      loop_end = y;
-    }
-  }
+}
 
-  z = z0;
-  dz = (z1 - z0) / distance;
-  //printf("\t(%d, %d) -> (%d, %d)\tdistance: %0.2f\tdz: %0.2f\tz: %0.2f\n", x0, y0, x1, y1, distance, dz, z);
-  c=c_0;
-  while ( loop_start < loop_end ) {
+void add_cylinder(struct matrix * edges, double cx, double cy, double cz, double r, double h, int step) {
+  struct matrix * points=generate_cylinder(cx,cy,cz,r,h,step);
+  printf("points\n");
+  print_matrix(points);
+  int p0, p1, p2, p3;
+  int height, j;
 
-    double t=loop_start;
-    plot( s, zb, c, x, y, z );
-    if ( (wide && ((A > 0 && d > 0) ||
-                   (A < 0 && d < 0)))
-         ||
-         (tall && ((A > 0 && d < 0 ) ||
-                   (A < 0 && d > 0) ))) {
-      y+= dy_northeast;
-      d+= d_northeast;
-      x+= dx_northeast;
-    }
-    else {
-      x+= dx_east;
-      y+= dy_east;
-      d+= d_east;
-    }
-
-    c.red=(int) ( (double)(loop_end-loop_start)/(distance)*c_0.red + (double)(loop_start-t)/(distance)*c_1.red);
-    c.green=(int) ( (double)(loop_end-loop_start)/(distance)*c_0.green + (double)(loop_start-t)/(distance)*c_1.green);
-    c.blue=(int) ( (double)(loop_end-loop_start)/(distance)*c_0.blue + (double)(loop_start-t)/(distance)*c_1.blue);
-
-    
-    z+= dz;
-    loop_start++;
-  } //end drawing loop
-  plot( s, zb, c, x1, y1, z );
-} //end draw_line
-
-//scanline_convert_phong
-//draw_line_phong
-//scanline_convert_gouraud
-//draw_line_gouraud
+  int heightstep=1;
+  //if (h>99)
+  //heightstep=5;
 
 
-//always draws horizontal lines
-void draw_line_gouraud(int x0, int y0, double z0,
-               int x1, int y1, double z1,
-               screen s, zbuffer zb, color c_0, color c_1) {
-
-  //printf("color 0: red:%d green:%d blue: %d\n",c_0.red,c_0.green,c_0.blue);
-  //printf("color 1: red:%d green:%d blue: %d\n",c_1.red,c_1.green,c_1.blue);
-
-  int x, y;
-
-  double z, dz;
-
-  //swap points if going right -> left
-  int xt,zt;
-  color c;
-  if (x0 > x1) {
-    xt = x0;
-
-    c = c_0;
-    z = z0;
-    x0 = x1;
-    
-    z0 = z1;
-    c_0 = c_1;
-    x1 = xt;
-    
-    z1 = z;
-    c_1 = c;
-  }
-
-  x=x0;
-  z = z0;
-  dz = (z1 - z0) / (x1-x0);
-  //printf("\t(%d, %d) -> (%d, %d)\tdistance: %0.2f\tdz: %0.2f\tz: %0.2f\n", x0, y0, x1, y1, distance, dz, z);
-
-  //color stuff, c=(x1-x)/(x1-x0)*c_0 + (x-x_0)/(x1-x0)*c_1
-  c=c_0;
+  //add circles at ends
   
-  while (x<x1) {
-    plot( s, zb, c, x, y0, z );  
-    //printf("[gouraud draw line colors]\n");
-    //printf("x1-x0: %d\n",x1-x0);
-    //printf("x1-x/x1-x0: %lf | x-x0/(x1-x0): %lf\n",(double)(x1-x)/(x1-x0),(double)(x-x0)/(x1-x0));
-    c.red=(int) ( (double)(x1-x)/(x1-x0)*c_0.red + (double)(x-x0)/(x1-x0)*c_1.red);
-    c.green=(int) ( (double)(x1-x)/(x1-x0)*c_0.green + (double)(x-x0)/(x1-x0)*c_1.green);
-    c.blue=(int) ( (double)(x1-x)/(x1-x0)*c_0.blue + (double)(x-x0)/(x1-x0)*c_1.blue);
-    printf("color: red:%d green:%d blue: %d\n",c.red,c.green,c.blue);
-    z+=dz;
-    x++;
-  } //end drawing loop
-  plot( s, zb, c, x1, y1, z );  
-} //end draw_line
+  double x0=r+cx;
+  double z0=cz;
+  double x1,z1;
+  int rot;
+  for (rot=1;rot<=step;rot++) {
+      double t = (double)rot/step;
+      x1=r*cos(2*M_PI*t)+cx;
+      z1=r*sin(2*M_PI*t)+cz;
 
+      add_polygon(edges,x0,cy,z0,x1,cy,z1,cx,cy,cz);
+      add_polygon(edges,x1,cy+h,z1,x0,cy+h,z0,cx,cy+h,cz);
+      x0=x1;
+      z0=z1;
 
-
-void draw_line_phong(int x0, int y0, double z0,
-		     int x1, int y1, double z1,
-		     screen s, zbuffer zb, double * n_0, double * n_1,
-		     double *view, double light[2][3], color ambient, double *areflect, double *dreflect, double *sreflect) {
-
-
-  //printf("[draw line phong] normal0:\nx:%lf |y:%lf |z:%lf\n",n_0[0],n_0[1],n_0[2]);
-  //printf("[draw line phong] normal1:\nx:%lf |y:%lf |z:%lf\n\n\n",n_1[0],n_1[1],n_1[2]);
-  
-  int x, y;
-
-  double z, dz;
-
-  //swap points if going right -> left
-  int xt,zt;
-  double* norm;
-  if (x0 > x1) {
-    xt = x0;
-
-    norm = n_0;
-    z = z0;
-    x0 = x1;
-    
-    z0 = z1;
-    n_0 = n_1;
-    x1 = xt;
-    
-    z1 = z;
-    n_1 = norm;
   }
-
-  x=x0;
-  z = z0;
-  dz = (z1 - z0) / (x1-x0);
-  //printf("\t(%d, %d) -> (%d, %d)\tdistance: %0.2f\tdz: %0.2f\tz: %0.2f\n", x0, y0, x1, y1, distance, dz, z);
-
-  //color stuff, c=(x1-x)/(x1-x0)*c_0 + (x-x_0)/(x1-x0)*c_1
-  norm=n_0;
-  color c;
-  c=get_lighting(norm, view, ambient, light, areflect, dreflect, sreflect);
   
-  //printf("[draw line phong] normal:\nx:%lf |y:%lf |z:%lf\n",norm[0],norm[1],norm[2]);
-  while (x<x1) {
-    plot( s, zb, c, x, y0, z );  
+  for (height=0;height<h;height++) {
+    for (j=0;j<step;j++) {
+      
+      p0=step*height+j;
+      p2=step*(height+1)+j;
+      if (j==step-1) {
+	p1=step*height;
+	p3=step*(height+1);
+      } else {
+	p1=p0+1;
+	p3=p2+1;
+      }
+      //printf("p0: %d, p1: %d, p2: %d, p3: %d\n",p0,p1,p2,p3);
+	add_polygon( edges, points->m[0][p0],
+                   points->m[1][p0],
+                   points->m[2][p0],
+                   points->m[0][p3],
+                   points->m[1][p3],
+                   points->m[2][p3],
+                   points->m[0][p1],
+                   points->m[1][p1],
+                   points->m[2][p1]);
+	add_polygon( edges, points->m[0][p0],
+                   points->m[1][p0],
+                   points->m[2][p0],
+                   points->m[0][p2],
+                   points->m[1][p2],
+                   points->m[2][p2],
+                   points->m[0][p3],
+                   points->m[1][p3],
+                   points->m[2][p3]);
+      
+      
+    }
+
+  }
+  
+  /*
+  int i=0;
+  while (i<points->lastcol){
+    add_edge(edges,points->m[0][i],points->m[1][i],points->m[2][i],points->m[0][i],points->m[1][i]+1,points->m[2][i]);
+    i++;
+    }*/
+
+  free(points);
+}
 
 
-    norm[0]= (double)(x1-x)/(x1-x0)*n_0[0] + (double)(x-x0)/(x1-x0)*n_1[0];
-    norm[1]= (double)(x1-x)/(x1-x0)*n_0[1] + (double)(x-x0)/(x1-x0)*n_1[1];
-    norm[2]= (double)(x1-x)/(x1-x0)*n_0[2] + (double)(x-x0)/(x1-x0)*n_1[2];
-    printf("[draw line phong] normal:\nx:%lf |y:%lf |z:%lf\n",norm[0],norm[1],norm[2]);
-    /*
-    c.red=(int) ( (double)(x1-x)/(x1-x0)*c_0.red + (double)(x-x0)/(x1-x0)*c_1.red);
-    c.green=(int) ( (double)(x1-x)/(x1-x0)*c_0.green + (double)(x-x0)/(x1-x0)*c_1.green);
-    c.blue=(int) ( (double)(x1-x)/(x1-x0)*c_0.blue + (double)(x-x0)/(x1-x0)*c_1.blue);*/
-    c=get_lighting(norm, view, ambient, light, areflect, dreflect, sreflect);
-    
-    z+=dz;
-    x++;
-  } //end drawing loop
-  c=get_lighting(n_1, view, ambient, light, areflect, dreflect, sreflect);
-  plot( s, zb, c, x1, y1, z );  
-} //end draw_line
 
-
+/*
 
 int main() {
 
@@ -1408,91 +889,29 @@ int main() {
   //draw_line_phong(10, 101, 8, 300, 101, 99, s, zb, n_0, n_1, view, light, ambient, areflect, dreflect, sreflect);
   //draw_line_phong(10, 102, 8, 300, 102, 99, s, zb, n_0, n_1, view, light, ambient, areflect, dreflect, sreflect);
 
-  struct matrix * edges=new_matrix(4,1000);
-  add_cylinder(edges, 250, 50, 0, 50, 200, 30);
-  draw_lines(edges, s, zb, c0);
 
+  struct matrix * polygons=new_matrix(4,1000);
+  add_cylinder(polygons,0,-10,0,100,100,8);
+  //print_matrix(polygons);
+  struct matrix * move=make_translate(250,100,0);
+  struct matrix * rot=make_rotX(-10);
+  matrix_mult(rot,polygons);
+  matrix_mult(move,polygons);
+  
+    
+  //matrix_mult(transform,edges);
+  //matrix_mult(transform2,edges);
+
+  //print_matrix(edges);
+  draw_polygons(polygons, s, zb, view, light, ambient, areflect, dreflect, sreflect);
+  //draw_lines(edges, s, zb, c0);
+  
+  //edges->lastcol=0;
+  //add_sphere(edges, 0, 0, 0, 50, 30);
+  //draw_polygons(edges, s, zb, view, light, ambient, areflect, dreflect, sreflect);
   display(s);
-  free(edges);
+  //save_ppm(s, "test.ppm");
+  free(polygons);
   return 0;
-}
-
-
-struct matrix * generate_cylinder(double cx, double cy, double cz, double r, double h, int step) {
-
-  struct matrix * points = new_matrix(4, step*h);
-  double x,height,z;
-  int rot;
-  for (height=cy;height<h;height++) {
-
-    for (rot=0;rot<step;rot++) {
-      double t = (double)rot/step;
-      x=r*cos(2*M_PI*t)+cx;
-      z=r*sin(2*M_PI*t)+cz;
-      add_point(points,x,height,z);
-
-    }
-
-  }
-  return points;
-
-}
-
-void add_cylinder(struct matrix * edges, double cx, double cy, double cz, double r, double h, int step) {
-  struct matrix * points=generate_cylinder(cx,cy,cz,r,h,step);
-
-  int p0, p1, p2, p3;
-  int height, j;
-
-  for (height=0;height<h;height++) {
-
-    for (j=0;j<step;j++) {
-      p0=step*height+j;
-      p2=step*(height+1)+j;
-      if (j==step-1) {
-	p1=(step*height);
-	p3=step*(height+1);
-      } else {
-	p1=p0+1;
-	p3=p2+1;
-      }
-
-      add_polygon( edges, points->m[0][p0],
-                   points->m[1][p0],
-                   points->m[2][p0],
-                   points->m[0][p1],
-                   points->m[1][p1],
-                   points->m[2][p1],
-                   points->m[0][p3],
-                   points->m[1][p3],
-                   points->m[2][p3]);
-      add_polygon( edges, points->m[0][p0],
-                   points->m[1][p0],
-                   points->m[2][p0],
-                   points->m[0][p3],
-                   points->m[1][p3],
-                   points->m[2][p3],
-                   points->m[0][p2],
-                   points->m[1][p2],
-                   points->m[2][p2]);
-      
-    }
-
-
-
-  }
-
-
-
-
-
-
-  /*
-  int i=0;
-  while (i<points->lastcol){
-    add_edge(edges,points->m[0][i],points->m[1][i],points->m[2][i],points->m[0][i]+1,points->m[1][i]+1,points->m[2][i]+1);
-    i++;
-    }*/
-  free(points);
-}
+}*/
 

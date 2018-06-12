@@ -126,7 +126,6 @@ void first_pass() {
   ====================*/
 struct vary_node ** second_pass() {
   //struct vary_node * knobs[num_frames];//=(struct vary_node **) malloc(sizeof(struct vary_node *));//calloc please
-  //printf("begin second pass\n");
   struct vary_node ** knobs=(struct vary_node **) calloc(sizeof(struct vary_node *), num_frames);
   int i=0;
   for (;i<lastop;i++) {
@@ -380,6 +379,18 @@ void my_main() {
 			areflect, dreflect, sreflect);
 	  tmp->lastcol = 0;
 	  break;
+	case CYLINDER:
+	  add_cylinder(tmp, op[i].op.cylinder.d[0],
+		       op[i].op.cylinder.d[1],
+		       op[i].op.cylinder.d[2],
+		       op[i].op.cylinder.r,
+		       op[i].op.cylinder.h,
+		       step_3d);
+	  matrix_mult( peek(systems), tmp );
+	  draw_polygons(tmp, t, zb, view, light, ambient,
+			areflect, dreflect, sreflect);
+	  tmp->lastcol = 0;
+	  break;
 	case TORUS:
 	  /* printf("Torus: %6.2f %6.2f %6.2f r0=%6.2f r1=%6.2f", */
 	  /* 	 op[i].op.torus.d[0],op[i].op.torus.d[1], */
@@ -583,6 +594,18 @@ void my_main() {
                       areflect, dreflect, sreflect);
         tmp->lastcol = 0;
         break;
+      case CYLINDER:
+	  add_cylinder(tmp, op[i].op.cylinder.d[0],
+		       op[i].op.cylinder.d[1],
+		       op[i].op.cylinder.d[2],
+		       op[i].op.cylinder.r,
+		       op[i].op.cylinder.h,
+		       step_3d);
+	  matrix_mult( peek(systems), tmp );
+	  draw_polygons(tmp, t, zb, view, light, ambient,
+			areflect, dreflect, sreflect);
+	  tmp->lastcol = 0;
+	  break;
       case TORUS:
         /* printf("Torus: %6.2f %6.2f %6.2f r0=%6.2f r1=%6.2f", */
         /* 	 op[i].op.torus.d[0],op[i].op.torus.d[1], */

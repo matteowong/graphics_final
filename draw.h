@@ -5,8 +5,6 @@
 #include "ml6.h"
 
 void scanline_convert( struct matrix *points, int i, screen s, zbuffer zb, color c );
-void scanline_convert_gouraud( struct matrix *points, int i, screen s, zbuffer zb, double *view, double light[2][3], color ambient, double *areflect, double *dreflect, double *sreflect);
-void scanline_convert_phong( struct matrix *points, int i, screen s, zbuffer zb, double *view, double light[2][3], color ambient, double *areflect, double *dreflect, double *sreflect);
 
 //polygon organization
 void add_polygons( struct matrix * points,
@@ -24,7 +22,6 @@ void add_box( struct matrix * edges,
 void add_sphere( struct matrix * edges,
                  double cx, double cy, double cz,
                  double r, int step );
-void add_cylinder(struct matrix * edges, double cx, double cy, double cz, double r, double h, int step);
 struct matrix * generate_sphere(double cx, double cy, double cz,
                                 double r, int step );
 void add_torus( struct matrix * edges,
@@ -32,7 +29,8 @@ void add_torus( struct matrix * edges,
                 double r1, double r2, int step );
 struct matrix * generate_torus( double cx, double cy, double cz,
                                 double r1, double r2, int step );
-struct matrix * generate_cylinder(double cx, double cy, double cz, double r, double h, int step);
+struct matrix * generate_cylinder(double cx, double cy, double cz, double r, double h0, int step);
+void add_cylinder(struct matrix * edges, double cx, double cy, double cz, double r, double h, int step);
 
 //advanced shapes
 void add_circle( struct matrix * edges,
@@ -53,17 +51,5 @@ void draw_lines( struct matrix * points, screen s, zbuffer zb, color c);
 void draw_line(int x0, int y0, double z0,
                int x1, int y1, double z1,
                screen s, zbuffer zb, color c);
-void draw_line_gouraud(int x0, int y0, double z0,
-               int x1, int y1, double z1,
-               screen s, zbuffer zb, color c_0, color c_1);
-
-void draw_line_gouraud2(int x0, int y0, double z0,
-               int x1, int y1, double z1,
-               screen s, zbuffer zb, color c_0, color c_1);
-
-void draw_line_phong(int x0, int y0, double z0,
-               int x1, int y1, double z1,
-		       screen s, zbuffer zb, double * n_0, double * n_1,
-		       double *view, double light[2][3], color ambient, double *areflect, double *dreflect, double *sreflect);
 
 #endif

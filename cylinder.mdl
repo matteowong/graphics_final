@@ -1,0 +1,5 @@
+push
+rotate x 45
+move 250 100 0
+cylinder 0 -10 0 100 100
+display
