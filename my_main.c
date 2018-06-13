@@ -338,21 +338,324 @@ void my_main() {
   printf("frames: %d\n",num_frames);
   if (num_frames>1) {
   
-  struct vary_node** knobs=second_pass();
-  int frame;
-  for (frame=0;frame<num_frames;frame++) {
+    struct vary_node** knobs=second_pass();
+    int frame;
+    for (frame=0;frame<num_frames;frame++) {
 
-    //updates symbol table
-    struct vary_node* temp=knobs[frame];
-    while (temp) {
-      if (!lookup_symbol(temp->name))
-	add_symbol(temp->name, SYM_VALUE, &(temp->value));
-      else
-	set_value(lookup_symbol(temp->name),temp->value);
-      temp=temp->next;
-    }
-    printf("\n[frame %d] printing knobs\n",frame);
-    print_knobs();
+      //updates symbol table
+      struct vary_node* temp=knobs[frame];
+      while (temp) {
+	if (!lookup_symbol(temp->name))
+	  add_symbol(temp->name, SYM_VALUE, &(temp->value));
+	else
+	  set_value(lookup_symbol(temp->name),temp->value);
+	temp=temp->next;
+      }
+      printf("\n[frame %d] printing knobs\n",frame);
+      print_knobs();
+      for (i=0;i<lastop;i++) {
+	//printf("%d: ",i);
+	switch (op[i].opcode)
+	  {
+	  case SPHERE:
+	    /* printf("Sphere: %6.2f %6.2f %6.2f r=%6.2f", */
+	    /* 	 op[i].op.sphere.d[0],op[i].op.sphere.d[1], */
+	    /* 	 op[i].op.sphere.d[2], */
+	    /* 	 op[i].op.sphere.r); */
+	    if (op[i].op.sphere.constants != NULL)
+	      {
+		//printf("\tconstants: %s",op[i].op.sphere.constants->name);
+		areflect[RED]=op[i].op.sphere.constants->s.c->r[0];
+		dreflect[RED]=op[i].op.sphere.constants->s.c->r[1];
+		sreflect[RED]=op[i].op.sphere.constants->s.c->r[2];
+
+		areflect[GREEN]=op[i].op.sphere.constants->s.c->g[0];
+		dreflect[GREEN]=op[i].op.sphere.constants->s.c->g[1];
+		sreflect[GREEN]=op[i].op.sphere.constants->s.c->g[2];
+
+		areflect[BLUE]=op[i].op.sphere.constants->s.c->b[0];
+		dreflect[BLUE]=op[i].op.sphere.constants->s.c->b[1];
+		sreflect[BLUE]=op[i].op.sphere.constants->s.c->b[2];
+	
+		light[COLOR][RED]=op[i].op.sphere.constants->s.c->red;
+		light[COLOR][GREEN]=op[i].op.sphere.constants->s.c->green;
+		light[COLOR][BLUE]=op[i].op.sphere.constants->s.c->blue;
+	      }
+	    if (op[i].op.sphere.cs != NULL)
+	      {
+		//printf("\tcs: %s",op[i].op.sphere.cs->name);
+	      }
+	    add_sphere(tmp, op[i].op.sphere.d[0],
+		       op[i].op.sphere.d[1],
+		       op[i].op.sphere.d[2],
+		       op[i].op.sphere.r, step_3d);
+	    matrix_mult( peek(systems), tmp );
+	    draw_polygons(tmp, t, zb, view, light, ambient,
+			  areflect, dreflect, sreflect);
+	    tmp->lastcol = 0;
+	    break;
+	  case CYLINDER:
+	    add_cylinder(tmp, op[i].op.cylinder.d[0],
+			 op[i].op.cylinder.d[1],
+			 op[i].op.cylinder.d[2],
+			 op[i].op.cylinder.r,
+			 op[i].op.cylinder.h,
+			 step_3d);
+	    matrix_mult( peek(systems), tmp );
+	    draw_polygons(tmp, t, zb, view, light, ambient,
+			  areflect, dreflect, sreflect);
+	    tmp->lastcol = 0;
+	    break;
+	  case CONE:
+	    add_cone(tmp, op[i].op.cone.d[0],
+		     op[i].op.cone.d[1],
+		     op[i].op.cone.d[2],
+		     op[i].op.cone.r,
+		     op[i].op.cone.h,
+		     step_3d);
+	    matrix_mult( peek(systems), tmp );
+	    draw_polygons(tmp, t, zb, view, light, ambient,
+			  areflect, dreflect, sreflect);
+	    tmp->lastcol = 0;
+	    break;
+	  case TORUS:
+	    /* printf("Torus: %6.2f %6.2f %6.2f r0=%6.2f r1=%6.2f", */
+	    /* 	 op[i].op.torus.d[0],op[i].op.torus.d[1], */
+	    /* 	 op[i].op.torus.d[2], */
+	    /* 	 op[i].op.torus.r0,op[i].op.torus.r1); */
+	    if (op[i].op.torus.constants != NULL)
+	      {
+		//printf("\tconstants: %s",op[i].op.torus.constants->name);
+		areflect[RED]=op[i].op.sphere.constants->s.c->r[0];
+		dreflect[RED]=op[i].op.sphere.constants->s.c->r[1];
+		sreflect[RED]=op[i].op.sphere.constants->s.c->r[2];
+
+		areflect[GREEN]=op[i].op.sphere.constants->s.c->g[0];
+		dreflect[GREEN]=op[i].op.sphere.constants->s.c->g[1];
+		sreflect[GREEN]=op[i].op.sphere.constants->s.c->g[2];
+
+		areflect[BLUE]=op[i].op.sphere.constants->s.c->b[0];
+		dreflect[BLUE]=op[i].op.sphere.constants->s.c->b[1];
+		sreflect[BLUE]=op[i].op.sphere.constants->s.c->b[2];
+	
+		light[COLOR][RED]=op[i].op.sphere.constants->s.c->red;
+		light[COLOR][GREEN]=op[i].op.sphere.constants->s.c->green;
+		light[COLOR][BLUE]=op[i].op.sphere.constants->s.c->blue;
+	      }
+	    if (op[i].op.torus.cs != NULL)
+	      {
+		//printf("\tcs: %s",op[i].op.torus.cs->name);
+	      }
+	    add_torus(tmp,
+		      op[i].op.torus.d[0],
+		      op[i].op.torus.d[1],
+		      op[i].op.torus.d[2],
+		      op[i].op.torus.r0,op[i].op.torus.r1, step_3d);
+	    matrix_mult( peek(systems), tmp );
+	    draw_polygons(tmp, t, zb, view, light, ambient,
+			  areflect, dreflect, sreflect);
+	    tmp->lastcol = 0;
+	    break;
+	  case BOX:
+	    /* printf("Box: d0: %6.2f %6.2f %6.2f d1: %6.2f %6.2f %6.2f", */
+	    /* 	 op[i].op.box.d0[0],op[i].op.box.d0[1], */
+	    /* 	 op[i].op.box.d0[2], */
+	    /* 	 op[i].op.box.d1[0],op[i].op.box.d1[1], */
+	    /* 	 op[i].op.box.d1[2]); */
+	    if (op[i].op.box.constants != NULL)
+	      {
+		//printf("\tconstants: %s",op[i].op.box.constants->name);
+		areflect[RED]=op[i].op.sphere.constants->s.c->r[0];
+		dreflect[RED]=op[i].op.sphere.constants->s.c->r[1];
+		sreflect[RED]=op[i].op.sphere.constants->s.c->r[2];
+
+		areflect[GREEN]=op[i].op.sphere.constants->s.c->g[0];
+		dreflect[GREEN]=op[i].op.sphere.constants->s.c->g[1];
+		sreflect[GREEN]=op[i].op.sphere.constants->s.c->g[2];
+
+		areflect[BLUE]=op[i].op.sphere.constants->s.c->b[0];
+		dreflect[BLUE]=op[i].op.sphere.constants->s.c->b[1];
+		sreflect[BLUE]=op[i].op.sphere.constants->s.c->b[2];
+	
+		light[COLOR][RED]=op[i].op.sphere.constants->s.c->red;
+		light[COLOR][GREEN]=op[i].op.sphere.constants->s.c->green;
+		light[COLOR][BLUE]=op[i].op.sphere.constants->s.c->blue;
+	      }
+	    if (op[i].op.box.cs != NULL)
+	      {
+		//printf("\tcs: %s",op[i].op.box.cs->name);
+	      }
+	    add_box(tmp,
+		    op[i].op.box.d0[0],op[i].op.box.d0[1],
+		    op[i].op.box.d0[2],
+		    op[i].op.box.d1[0],op[i].op.box.d1[1],
+		    op[i].op.box.d1[2]);
+	    matrix_mult( peek(systems), tmp );
+	    draw_polygons(tmp, t, zb, view, light, ambient,
+			  areflect, dreflect, sreflect);
+	    tmp->lastcol = 0;
+	    break;
+	  case LINE:
+	    /* printf("Line: from: %6.2f %6.2f %6.2f to: %6.2f %6.2f %6.2f",*/
+	    /* 	 op[i].op.line.p0[0],op[i].op.line.p0[1], */
+	    /* 	 op[i].op.line.p0[1], */
+	    /* 	 op[i].op.line.p1[0],op[i].op.line.p1[1], */
+	    /* 	 op[i].op.line.p1[1]); */
+	    if (op[i].op.line.constants != NULL)
+	      {
+		//printf("\n\tConstants: %s",op[i].op.line.constants->name);
+		areflect[RED]=op[i].op.sphere.constants->s.c->r[0];
+		dreflect[RED]=op[i].op.sphere.constants->s.c->r[1];
+		sreflect[RED]=op[i].op.sphere.constants->s.c->r[2];
+
+		areflect[GREEN]=op[i].op.sphere.constants->s.c->g[0];
+		dreflect[GREEN]=op[i].op.sphere.constants->s.c->g[1];
+		sreflect[GREEN]=op[i].op.sphere.constants->s.c->g[2];
+
+		areflect[BLUE]=op[i].op.sphere.constants->s.c->b[0];
+		dreflect[BLUE]=op[i].op.sphere.constants->s.c->b[1];
+		sreflect[BLUE]=op[i].op.sphere.constants->s.c->b[2];
+	
+		light[COLOR][RED]=op[i].op.sphere.constants->s.c->red;
+		light[COLOR][GREEN]=op[i].op.sphere.constants->s.c->green;
+		light[COLOR][BLUE]=op[i].op.sphere.constants->s.c->blue;
+	      }
+	    if (op[i].op.line.cs0 != NULL)
+	      {
+		//printf("\n\tCS0: %s",op[i].op.line.cs0->name);
+	      }
+	    if (op[i].op.line.cs1 != NULL)
+	      {
+		//printf("\n\tCS1: %s",op[i].op.line.cs1->name);
+	      }
+	    add_edge(tmp,
+		     op[i].op.line.p0[0],op[i].op.line.p0[1],
+		     op[i].op.line.p0[2],
+		     op[i].op.line.p1[0],op[i].op.line.p1[1],
+		     op[i].op.line.p1[2]);
+	    matrix_mult( peek(systems), tmp );
+	    draw_lines(tmp, t, zb, g);
+	    tmp->lastcol = 0;
+	    break;
+	  case MOVE:
+	    //multiply by lookup_symbol(op[i].op.move.p->name)->s.value
+	    //need a way to check if their is a knob
+	    xval = op[i].op.move.d[0];
+	    yval = op[i].op.move.d[1];
+	    zval = op[i].op.move.d[2];
+
+	    printf("Move: %6.2f %6.2f %6.2f",
+		   xval, yval, zval);
+	    if (op[i].op.move.p != NULL)
+	      {
+		printf("\tknob: %s",op[i].op.move.p->name);
+		xval*= lookup_symbol(op[i].op.move.p->name)->s.value;
+		yval*= lookup_symbol(op[i].op.move.p->name)->s.value;
+		zval*= lookup_symbol(op[i].op.move.p->name)->s.value;
+	      }
+	    printf("Move post-knob: %6.2f %6.2f %6.2f",
+		   xval, yval, zval);
+	    tmp = make_translate( xval, yval, zval );
+	    matrix_mult(peek(systems), tmp);
+	    copy_matrix(tmp, peek(systems));
+	    tmp->lastcol = 0;
+	    break;
+	  case SCALE:
+	    xval = op[i].op.scale.d[0];
+	    yval = op[i].op.scale.d[1];
+	    zval = op[i].op.scale.d[2];
+	    printf("Scale: %6.2f %6.2f %6.2f",
+		   xval, yval, zval);
+	  
+	    if (op[i].op.scale.p != NULL)
+	      {
+		printf("\tknob: %s",op[i].op.scale.p->name);
+		xval*= lookup_symbol(op[i].op.scale.p->name)->s.value;
+		yval*= lookup_symbol(op[i].op.scale.p->name)->s.value;
+		zval*= lookup_symbol(op[i].op.scale.p->name)->s.value;
+	      }
+	    printf("Scale post-knob: %6.2f %6.2f %6.2f",
+		   xval, yval, zval);
+	    tmp = make_scale( xval, yval, zval );
+	    matrix_mult(peek(systems), tmp);
+	    copy_matrix(tmp, peek(systems));
+	    tmp->lastcol = 0;
+	    break;
+	  case ROTATE:
+	    xval = op[i].op.rotate.axis;
+	    theta = op[i].op.rotate.degrees;
+
+	    printf("Rotate: axis: %6.2f degrees: %6.2f",
+		   xval, theta);
+	    if (op[i].op.rotate.p != NULL)
+	      {
+		printf("\tknob: %s",op[i].op.rotate.p->name);
+		theta*= lookup_symbol(op[i].op.rotate.p->name)->s.value;
+	      }
+	    printf("Rotate post-knob: axis: %6.2f degrees: %6.2f",
+		   xval, theta);
+	    theta*= (M_PI / 180);
+	    if (op[i].op.rotate.axis == 0 )
+	      tmp = make_rotX( theta );
+	    else if (op[i].op.rotate.axis == 1 )
+	      tmp = make_rotY( theta );
+	    else
+	      tmp = make_rotZ( theta );
+
+	    matrix_mult(peek(systems), tmp);
+	    copy_matrix(tmp, peek(systems));
+	    tmp->lastcol = 0;
+	    break;
+	  case PUSH:
+	    //printf("Push");
+	    push(systems);
+	    break;
+	  case POP:
+	    //printf("Pop");
+	    pop(systems);
+	    break;
+	  case SAVE:
+	    //printf("Save: %s",op[i].op.save.p->name);
+	    save_extension(t, op[i].op.save.p->name);
+	    break;
+	  case DISPLAY:
+	    //printf("Display");
+	    display(t);
+	    break;
+	  case AMBIENT:
+	    ambient.red=op[i].op.ambient.c[0];
+	    ambient.green=op[i].op.ambient.c[1];
+	    ambient.blue=op[i].op.ambient.c[2];
+	    break;
+	  case LIGHT:
+	    //op[i].op.light.p->name
+	    //light[LOCATION][0-2]
+	    light[LOCATION][0]=lookup_symbol(op[i].op.light.p->name)->s.l->l[0];
+	    light[LOCATION][1]=lookup_symbol(op[i].op.light.p->name)->s.l->l[1];
+	    light[LOCATION][2]=lookup_symbol(op[i].op.light.p->name)->s.l->l[2];
+	    //light[COLOR][0-2]
+	    light[COLOR][0]=lookup_symbol(op[i].op.light.p->name)->s.l->c[0];
+	    light[COLOR][1]=lookup_symbol(op[i].op.light.p->name)->s.l->c[1];
+	    light[COLOR][2]=lookup_symbol(op[i].op.light.p->name)->s.l->c[2];
+	    break;
+	  } //end opcode switch
+	printf("\n");
+      }//end operation loop
+      //save screen t image as .png to directory [anim/]
+      char fname[12+strlen(name)];//8=strlen("anim/")+3 for numbers+strlen(".png")
+
+      sprintf(fname,"anim/%s%03d.png",name,frame);
+      //display(t);
+    
+      save_extension(t,fname);
+      clear_screen(t);
+      clear_zbuffer(zb);
+      systems=new_stack();
+      tmp=new_matrix(4,1000);
+    }//end for loop for all frames
+    make_animation(name);
+  }
+  else {
     for (i=0;i<lastop;i++) {
       //printf("%d: ",i);
       switch (op[i].opcode)
@@ -365,6 +668,21 @@ void my_main() {
 	  if (op[i].op.sphere.constants != NULL)
 	    {
 	      //printf("\tconstants: %s",op[i].op.sphere.constants->name);
+	      areflect[RED]=op[i].op.sphere.constants->s.c->r[0];
+	      dreflect[RED]=op[i].op.sphere.constants->s.c->r[1];
+	      sreflect[RED]=op[i].op.sphere.constants->s.c->r[2];
+
+	      areflect[GREEN]=op[i].op.sphere.constants->s.c->g[0];
+	      dreflect[GREEN]=op[i].op.sphere.constants->s.c->g[1];
+	      sreflect[GREEN]=op[i].op.sphere.constants->s.c->g[2];
+
+	      areflect[BLUE]=op[i].op.sphere.constants->s.c->b[0];
+	      dreflect[BLUE]=op[i].op.sphere.constants->s.c->b[1];
+	      sreflect[BLUE]=op[i].op.sphere.constants->s.c->b[2];
+	
+	      light[COLOR][RED]=op[i].op.sphere.constants->s.c->red;
+	      light[COLOR][GREEN]=op[i].op.sphere.constants->s.c->green;
+	      light[COLOR][BLUE]=op[i].op.sphere.constants->s.c->blue;
 	    }
 	  if (op[i].op.sphere.cs != NULL)
 	    {
@@ -393,11 +711,11 @@ void my_main() {
 	  break;
 	case CONE:
 	  add_cone(tmp, op[i].op.cone.d[0],
-		       op[i].op.cone.d[1],
-		       op[i].op.cone.d[2],
-		       op[i].op.cone.r,
-		       op[i].op.cone.h,
-		       step_3d);
+		   op[i].op.cone.d[1],
+		   op[i].op.cone.d[2],
+		   op[i].op.cone.r,
+		   op[i].op.cone.h,
+		   step_3d);
 	  matrix_mult( peek(systems), tmp );
 	  draw_polygons(tmp, t, zb, view, light, ambient,
 			areflect, dreflect, sreflect);
@@ -411,6 +729,21 @@ void my_main() {
 	  if (op[i].op.torus.constants != NULL)
 	    {
 	      //printf("\tconstants: %s",op[i].op.torus.constants->name);
+	      areflect[RED]=op[i].op.sphere.constants->s.c->r[0];
+	      dreflect[RED]=op[i].op.sphere.constants->s.c->r[1];
+	      sreflect[RED]=op[i].op.sphere.constants->s.c->r[2];
+
+	      areflect[GREEN]=op[i].op.sphere.constants->s.c->g[0];
+	      dreflect[GREEN]=op[i].op.sphere.constants->s.c->g[1];
+	      sreflect[GREEN]=op[i].op.sphere.constants->s.c->g[2];
+
+	      areflect[BLUE]=op[i].op.sphere.constants->s.c->b[0];
+	      dreflect[BLUE]=op[i].op.sphere.constants->s.c->b[1];
+	      sreflect[BLUE]=op[i].op.sphere.constants->s.c->b[2];
+	
+	      light[COLOR][RED]=op[i].op.sphere.constants->s.c->red;
+	      light[COLOR][GREEN]=op[i].op.sphere.constants->s.c->green;
+	      light[COLOR][BLUE]=op[i].op.sphere.constants->s.c->blue;
 	    }
 	  if (op[i].op.torus.cs != NULL)
 	    {
@@ -435,6 +768,21 @@ void my_main() {
 	  if (op[i].op.box.constants != NULL)
 	    {
 	      //printf("\tconstants: %s",op[i].op.box.constants->name);
+	      areflect[RED]=op[i].op.sphere.constants->s.c->r[0];
+	      dreflect[RED]=op[i].op.sphere.constants->s.c->r[1];
+	      sreflect[RED]=op[i].op.sphere.constants->s.c->r[2];
+
+	      areflect[GREEN]=op[i].op.sphere.constants->s.c->g[0];
+	      dreflect[GREEN]=op[i].op.sphere.constants->s.c->g[1];
+	      sreflect[GREEN]=op[i].op.sphere.constants->s.c->g[2];
+
+	      areflect[BLUE]=op[i].op.sphere.constants->s.c->b[0];
+	      dreflect[BLUE]=op[i].op.sphere.constants->s.c->b[1];
+	      sreflect[BLUE]=op[i].op.sphere.constants->s.c->b[2];
+	
+	      light[COLOR][RED]=op[i].op.sphere.constants->s.c->red;
+	      light[COLOR][GREEN]=op[i].op.sphere.constants->s.c->green;
+	      light[COLOR][BLUE]=op[i].op.sphere.constants->s.c->blue;
 	    }
 	  if (op[i].op.box.cs != NULL)
 	    {
@@ -459,6 +807,21 @@ void my_main() {
 	  if (op[i].op.line.constants != NULL)
 	    {
 	      //printf("\n\tConstants: %s",op[i].op.line.constants->name);
+	      areflect[RED]=op[i].op.sphere.constants->s.c->r[0];
+	      dreflect[RED]=op[i].op.sphere.constants->s.c->r[1];
+	      sreflect[RED]=op[i].op.sphere.constants->s.c->r[2];
+
+	      areflect[GREEN]=op[i].op.sphere.constants->s.c->g[0];
+	      dreflect[GREEN]=op[i].op.sphere.constants->s.c->g[1];
+	      sreflect[GREEN]=op[i].op.sphere.constants->s.c->g[2];
+
+	      areflect[BLUE]=op[i].op.sphere.constants->s.c->b[0];
+	      dreflect[BLUE]=op[i].op.sphere.constants->s.c->b[1];
+	      sreflect[BLUE]=op[i].op.sphere.constants->s.c->b[2];
+	
+	      light[COLOR][RED]=op[i].op.sphere.constants->s.c->red;
+	      light[COLOR][GREEN]=op[i].op.sphere.constants->s.c->green;
+	      light[COLOR][BLUE]=op[i].op.sphere.constants->s.c->blue;
 	    }
 	  if (op[i].op.line.cs0 != NULL)
 	    {
@@ -478,23 +841,15 @@ void my_main() {
 	  tmp->lastcol = 0;
 	  break;
 	case MOVE:
-	  //multiply by lookup_symbol(op[i].op.move.p->name)->s.value
-	  //need a way to check if their is a knob
 	  xval = op[i].op.move.d[0];
 	  yval = op[i].op.move.d[1];
 	  zval = op[i].op.move.d[2];
-
 	  printf("Move: %6.2f %6.2f %6.2f",
 		 xval, yval, zval);
 	  if (op[i].op.move.p != NULL)
 	    {
 	      printf("\tknob: %s",op[i].op.move.p->name);
-	      xval*= lookup_symbol(op[i].op.move.p->name)->s.value;
-	      yval*= lookup_symbol(op[i].op.move.p->name)->s.value;
-	      zval*= lookup_symbol(op[i].op.move.p->name)->s.value;
 	    }
-	  printf("Move post-knob: %6.2f %6.2f %6.2f",
-		 xval, yval, zval);
 	  tmp = make_translate( xval, yval, zval );
 	  matrix_mult(peek(systems), tmp);
 	  copy_matrix(tmp, peek(systems));
@@ -506,16 +861,10 @@ void my_main() {
 	  zval = op[i].op.scale.d[2];
 	  printf("Scale: %6.2f %6.2f %6.2f",
 		 xval, yval, zval);
-	  
 	  if (op[i].op.scale.p != NULL)
 	    {
 	      printf("\tknob: %s",op[i].op.scale.p->name);
-	      xval*= lookup_symbol(op[i].op.scale.p->name)->s.value;
-	      yval*= lookup_symbol(op[i].op.scale.p->name)->s.value;
-	      zval*= lookup_symbol(op[i].op.scale.p->name)->s.value;
 	    }
-	  printf("Scale post-knob: %6.2f %6.2f %6.2f",
-		 xval, yval, zval);
 	  tmp = make_scale( xval, yval, zval );
 	  matrix_mult(peek(systems), tmp);
 	  copy_matrix(tmp, peek(systems));
@@ -524,16 +873,12 @@ void my_main() {
 	case ROTATE:
 	  xval = op[i].op.rotate.axis;
 	  theta = op[i].op.rotate.degrees;
-
 	  printf("Rotate: axis: %6.2f degrees: %6.2f",
 		 xval, theta);
 	  if (op[i].op.rotate.p != NULL)
 	    {
 	      printf("\tknob: %s",op[i].op.rotate.p->name);
-	      theta*= lookup_symbol(op[i].op.rotate.p->name)->s.value;
 	    }
-	  printf("Rotate post-knob: axis: %6.2f degrees: %6.2f",
-		 xval, theta);
 	  theta*= (M_PI / 180);
 	  if (op[i].op.rotate.axis == 0 )
 	    tmp = make_rotX( theta );
@@ -574,238 +919,33 @@ void my_main() {
 	  light[LOCATION][1]=lookup_symbol(op[i].op.light.p->name)->s.l->l[1];
 	  light[LOCATION][2]=lookup_symbol(op[i].op.light.p->name)->s.l->l[2];
 	  //light[COLOR][0-2]
-	  light[COLOR][0]=lookup_symbol(op[i].op.light.p->name)->s.l->c[0];
-	  light[COLOR][1]=lookup_symbol(op[i].op.light.p->name)->s.l->c[1];
-	  light[COLOR][2]=lookup_symbol(op[i].op.light.p->name)->s.l->c[2];
+	  light[COLOR][RED]=lookup_symbol(op[i].op.light.p->name)->s.l->c[0];
+	  light[COLOR][GREEN]=lookup_symbol(op[i].op.light.p->name)->s.l->c[1];
+	  light[COLOR][BLUE]=lookup_symbol(op[i].op.light.p->name)->s.l->c[2];
 	  break;
+	  /*
+	    case CONSTANTS:
+	    //op[i].op.constants.p->r[0]
+	    areflect[RED]=op[i].op.constants.p->r[0];
+	    dreflect[RED]=op[i].op.constants.p->r[1];
+	    sreflect[RED]=op[i].op.constants.p->r[2];
+	
+	    areflect[GREEN]=op[i].op.constants.p->g[0];
+	    dreflect[GREEN]=op[i].op.constants.p->g[1];
+	    sreflect[GREEN]=op[i].op.constants.p->g[2];
+	
+	    areflect[BLUE]=op[i].op.constants.p->b[0];
+	    dreflect[BLUE]=op[i].op.constants.p->b[1];
+	    sreflect[BLUE]=op[i].op.constants.p->b[2];
+
+	    light[COLOR][RED]=op[i].op.constants.p->red;
+	    light[COLOR][GREEN]=op[i].op.constants.p->green;
+	    light[COLOR][BLUE]=op[i].op.constants.p->blue;
+	    //areflect, dreflect, sreflect [RED, GREEN, BLUE]
+	    */
 	} //end opcode switch
       printf("\n");
     }//end operation loop
-    //save screen t image as .png to directory [anim/]
-    char fname[12+strlen(name)];//8=strlen("anim/")+3 for numbers+strlen(".png")
-
-    sprintf(fname,"anim/%s%03d.png",name,frame);
-    //display(t);
-    
-    save_extension(t,fname);
-    clear_screen(t);
-    clear_zbuffer(zb);
-    systems=new_stack();
-    tmp=new_matrix(4,1000);
-  }//end for loop for all frames
-  make_animation(name);
-  }
-  else {
-  for (i=0;i<lastop;i++) {
-    //printf("%d: ",i);
-    switch (op[i].opcode)
-      {
-      case SPHERE:
-        /* printf("Sphere: %6.2f %6.2f %6.2f r=%6.2f", */
-        /* 	 op[i].op.sphere.d[0],op[i].op.sphere.d[1], */
-        /* 	 op[i].op.sphere.d[2], */
-        /* 	 op[i].op.sphere.r); */
-        if (op[i].op.sphere.constants != NULL)
-          {
-            //printf("\tconstants: %s",op[i].op.sphere.constants->name);
-          }
-        if (op[i].op.sphere.cs != NULL)
-          {
-            //printf("\tcs: %s",op[i].op.sphere.cs->name);
-          }
-        add_sphere(tmp, op[i].op.sphere.d[0],
-                   op[i].op.sphere.d[1],
-                   op[i].op.sphere.d[2],
-                   op[i].op.sphere.r, step_3d);
-        matrix_mult( peek(systems), tmp );
-        draw_polygons(tmp, t, zb, view, light, ambient,
-                      areflect, dreflect, sreflect);
-        tmp->lastcol = 0;
-        break;
-      case CYLINDER:
-	  add_cylinder(tmp, op[i].op.cylinder.d[0],
-		       op[i].op.cylinder.d[1],
-		       op[i].op.cylinder.d[2],
-		       op[i].op.cylinder.r,
-		       op[i].op.cylinder.h,
-		       step_3d);
-	  matrix_mult( peek(systems), tmp );
-	  draw_polygons(tmp, t, zb, view, light, ambient,
-			areflect, dreflect, sreflect);
-	  tmp->lastcol = 0;
-	  break;
-      case CONE:
-	  add_cone(tmp, op[i].op.cone.d[0],
-		       op[i].op.cone.d[1],
-		       op[i].op.cone.d[2],
-		       op[i].op.cone.r,
-		       op[i].op.cone.h,
-		       step_3d);
-	  matrix_mult( peek(systems), tmp );
-	  draw_polygons(tmp, t, zb, view, light, ambient,
-			areflect, dreflect, sreflect);
-	  tmp->lastcol = 0;
-	  break;
-      case TORUS:
-        /* printf("Torus: %6.2f %6.2f %6.2f r0=%6.2f r1=%6.2f", */
-        /* 	 op[i].op.torus.d[0],op[i].op.torus.d[1], */
-        /* 	 op[i].op.torus.d[2], */
-        /* 	 op[i].op.torus.r0,op[i].op.torus.r1); */
-        if (op[i].op.torus.constants != NULL)
-          {
-            //printf("\tconstants: %s",op[i].op.torus.constants->name);
-          }
-        if (op[i].op.torus.cs != NULL)
-          {
-            //printf("\tcs: %s",op[i].op.torus.cs->name);
-          }
-        add_torus(tmp,
-                  op[i].op.torus.d[0],
-                  op[i].op.torus.d[1],
-                  op[i].op.torus.d[2],
-                  op[i].op.torus.r0,op[i].op.torus.r1, step_3d);
-        matrix_mult( peek(systems), tmp );
-        draw_polygons(tmp, t, zb, view, light, ambient,
-                      areflect, dreflect, sreflect);
-        tmp->lastcol = 0;
-        break;
-      case BOX:
-        /* printf("Box: d0: %6.2f %6.2f %6.2f d1: %6.2f %6.2f %6.2f", */
-        /* 	 op[i].op.box.d0[0],op[i].op.box.d0[1], */
-        /* 	 op[i].op.box.d0[2], */
-        /* 	 op[i].op.box.d1[0],op[i].op.box.d1[1], */
-        /* 	 op[i].op.box.d1[2]); */
-        if (op[i].op.box.constants != NULL)
-          {
-            //printf("\tconstants: %s",op[i].op.box.constants->name);
-          }
-        if (op[i].op.box.cs != NULL)
-          {
-            //printf("\tcs: %s",op[i].op.box.cs->name);
-          }
-        add_box(tmp,
-                op[i].op.box.d0[0],op[i].op.box.d0[1],
-                op[i].op.box.d0[2],
-                op[i].op.box.d1[0],op[i].op.box.d1[1],
-                op[i].op.box.d1[2]);
-        matrix_mult( peek(systems), tmp );
-        draw_polygons(tmp, t, zb, view, light, ambient,
-                      areflect, dreflect, sreflect);
-        tmp->lastcol = 0;
-        break;
-      case LINE:
-        /* printf("Line: from: %6.2f %6.2f %6.2f to: %6.2f %6.2f %6.2f",*/
-        /* 	 op[i].op.line.p0[0],op[i].op.line.p0[1], */
-        /* 	 op[i].op.line.p0[1], */
-        /* 	 op[i].op.line.p1[0],op[i].op.line.p1[1], */
-        /* 	 op[i].op.line.p1[1]); */
-        if (op[i].op.line.constants != NULL)
-          {
-            //printf("\n\tConstants: %s",op[i].op.line.constants->name);
-          }
-        if (op[i].op.line.cs0 != NULL)
-          {
-            //printf("\n\tCS0: %s",op[i].op.line.cs0->name);
-          }
-        if (op[i].op.line.cs1 != NULL)
-          {
-            //printf("\n\tCS1: %s",op[i].op.line.cs1->name);
-          }
-        add_edge(tmp,
-                 op[i].op.line.p0[0],op[i].op.line.p0[1],
-                 op[i].op.line.p0[2],
-                 op[i].op.line.p1[0],op[i].op.line.p1[1],
-                 op[i].op.line.p1[2]);
-        matrix_mult( peek(systems), tmp );
-        draw_lines(tmp, t, zb, g);
-        tmp->lastcol = 0;
-        break;
-      case MOVE:
-        xval = op[i].op.move.d[0];
-        yval = op[i].op.move.d[1];
-        zval = op[i].op.move.d[2];
-        printf("Move: %6.2f %6.2f %6.2f",
-               xval, yval, zval);
-        if (op[i].op.move.p != NULL)
-          {
-            printf("\tknob: %s",op[i].op.move.p->name);
-          }
-        tmp = make_translate( xval, yval, zval );
-        matrix_mult(peek(systems), tmp);
-        copy_matrix(tmp, peek(systems));
-        tmp->lastcol = 0;
-        break;
-      case SCALE:
-        xval = op[i].op.scale.d[0];
-        yval = op[i].op.scale.d[1];
-        zval = op[i].op.scale.d[2];
-        printf("Scale: %6.2f %6.2f %6.2f",
-               xval, yval, zval);
-        if (op[i].op.scale.p != NULL)
-          {
-            printf("\tknob: %s",op[i].op.scale.p->name);
-          }
-        tmp = make_scale( xval, yval, zval );
-        matrix_mult(peek(systems), tmp);
-        copy_matrix(tmp, peek(systems));
-        tmp->lastcol = 0;
-        break;
-      case ROTATE:
-        xval = op[i].op.rotate.axis;
-        theta = op[i].op.rotate.degrees;
-        printf("Rotate: axis: %6.2f degrees: %6.2f",
-               xval, theta);
-        if (op[i].op.rotate.p != NULL)
-          {
-            printf("\tknob: %s",op[i].op.rotate.p->name);
-          }
-        theta*= (M_PI / 180);
-        if (op[i].op.rotate.axis == 0 )
-          tmp = make_rotX( theta );
-        else if (op[i].op.rotate.axis == 1 )
-          tmp = make_rotY( theta );
-        else
-          tmp = make_rotZ( theta );
-
-        matrix_mult(peek(systems), tmp);
-        copy_matrix(tmp, peek(systems));
-        tmp->lastcol = 0;
-        break;
-      case PUSH:
-        //printf("Push");
-        push(systems);
-        break;
-      case POP:
-        //printf("Pop");
-        pop(systems);
-        break;
-      case SAVE:
-        //printf("Save: %s",op[i].op.save.p->name);
-        save_extension(t, op[i].op.save.p->name);
-        break;
-      case DISPLAY:
-        //printf("Display");
-        display(t);
-        break;
-      case AMBIENT:
-	ambient.red=op[i].op.ambient.c[0];
-	ambient.green=op[i].op.ambient.c[1];
-	ambient.blue=op[i].op.ambient.c[2];
-	break;
-      case LIGHT:
-	//op[i].op.light.p->name
-	//light[LOCATION][0-2]
-	light[LOCATION][0]=lookup_symbol(op[i].op.light.p->name)->s.l->l[0];
-	light[LOCATION][1]=lookup_symbol(op[i].op.light.p->name)->s.l->l[1];
-	light[LOCATION][2]=lookup_symbol(op[i].op.light.p->name)->s.l->l[2];
-	//light[COLOR][0-2]
-	light[COLOR][0]=lookup_symbol(op[i].op.light.p->name)->s.l->c[0];
-	light[COLOR][1]=lookup_symbol(op[i].op.light.p->name)->s.l->c[1];
-	light[COLOR][2]=lookup_symbol(op[i].op.light.p->name)->s.l->c[2];
-	break;
-      } //end opcode switch
-    printf("\n");
-  }//end operation loop
   }
 }	
 	
