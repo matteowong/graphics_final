@@ -815,6 +815,118 @@ void add_cylinder(struct matrix * edges, double cx, double cy, double cz, double
   free(points);
 }
 
+void add_cone(struct matrix * edges, double cx, double cy, double cz, double radius, double h0, int step) {
+
+  double x0=radius+cx;
+  double z0=cz;
+  double x1,z1;
+  int rot;
+  for (rot=1;rot<=step;rot++) {
+      double t = (double)rot/step;
+      x1=radius*cos(2*M_PI*t)+cx;
+      z1=radius*sin(2*M_PI*t)+cz;
+
+      //add_edge(edges,x0,cy,z0,x1,cy,z1);
+      add_polygon(edges,x0,cy,z0,x1,cy,z1,cx,cy,cz);
+      //add_polygon(edges,x1,cy+h,z1,x0,cy+h,z0,cx,cy+h,cz);
+      x0=x1;
+      z0=z1;
+
+  }
+
+  struct matrix * points=generate_cone(cx,cy,cz,radius,h0,step);
+
+  int p0, p1, p2, p3;
+  int height, j;
+
+  int heightstep=1;
+  //if (h>99)
+  //heightstep=5;
+
+
+  //add circles at ends
+  
+  
+  for (height=0;height<h0;height++) {
+    for (j=0;j<step;j++) {
+      
+      p0=step*height+j;
+      p2=step*(height+1)+j;
+      if (j==step-1) {
+	p1=step*height;
+	p3=step*(height+1);
+      } else {
+	p1=p0+1;
+	p3=p2+1;
+      }
+      //printf("p0: %d, p1: %d, p2: %d, p3: %d\n",p0,p1,p2,p3);
+	add_polygon( edges, points->m[0][p0],
+                   points->m[1][p0],
+                   points->m[2][p0],
+                   points->m[0][p3],
+                   points->m[1][p3],
+                   points->m[2][p3],
+                   points->m[0][p1],
+                   points->m[1][p1],
+                   points->m[2][p1]);
+	add_polygon( edges, points->m[0][p0],
+                   points->m[1][p0],
+                   points->m[2][p0],
+                   points->m[0][p2],
+                   points->m[1][p2],
+                   points->m[2][p2],
+                   points->m[0][p3],
+                   points->m[1][p3],
+                   points->m[2][p3]);
+      
+      
+    }
+
+  }
+
+  /*
+  int i=0;
+  while (i<points->lastcol){
+    add_edge(edges,points->m[0][i],points->m[1][i],points->m[2][i],points->m[0][i],points->m[1][i]+1,points->m[2][i]);
+    i++;
+    }*/
+
+  free(points);
+
+
+}
+struct matrix * generate_cone(double cx, double cy, double cz, double radius, double h0, int step) {
+
+  int h=(int)h0;
+  struct matrix * points = new_matrix(4, step*h);
+  double x,height,z;
+  int rot;
+  height=0;
+
+  int heightstep=1;
+  double r;
+  //if (h0>99)
+  //heightstep=5;
+  while (height<=h) {
+    //printf("height: %lf\n",height);
+    r=radius*((double)(h0-height)/h0);
+    //printf("height: %lf\n",height);
+    for (rot=0;rot<step;rot++) {
+      double t = (double)rot/step;
+      x=r*cos(2*M_PI*t)+cx;
+      z=r*sin(2*M_PI*t)+cz;//problem is here
+      printf("inner rot height: %lf\n",height);
+      add_point(points,x,height+cy,z);
+      //printf("x: %lf, y: %lf, z: %lf\n",x,height,z);
+
+    }
+    height+=heightstep;
+  }
+  return points;
+
+}
+
+
 
 
 /*

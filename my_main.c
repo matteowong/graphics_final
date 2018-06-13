@@ -606,6 +606,18 @@ void my_main() {
 			areflect, dreflect, sreflect);
 	  tmp->lastcol = 0;
 	  break;
+      case CONE:
+	  add_cone(tmp, op[i].op.cone.d[0],
+		       op[i].op.cone.d[1],
+		       op[i].op.cone.d[2],
+		       op[i].op.cone.r,
+		       op[i].op.cone.h,
+		       step_3d);
+	  matrix_mult( peek(systems), tmp );
+	  draw_polygons(tmp, t, zb, view, light, ambient,
+			areflect, dreflect, sreflect);
+	  tmp->lastcol = 0;
+	  break;
       case TORUS:
         /* printf("Torus: %6.2f %6.2f %6.2f r0=%6.2f r1=%6.2f", */
         /* 	 op[i].op.torus.d[0],op[i].op.torus.d[1], */

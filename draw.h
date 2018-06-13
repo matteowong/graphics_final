@@ -31,6 +31,8 @@ struct matrix * generate_torus( double cx, double cy, double cz,
                                 double r1, double r2, int step );
 struct matrix * generate_cylinder(double cx, double cy, double cz, double r, double h0, int step);
 void add_cylinder(struct matrix * edges, double cx, double cy, double cz, double r, double h, int step);
+void add_cone(struct matrix * edges, double cx, double cy, double cz, double radius, double h0, int step);
+struct matrix * generate_cone(double cx, double cy, double cz, double radius, double h0, int step);
 
 //advanced shapes
 void add_circle( struct matrix * edges,

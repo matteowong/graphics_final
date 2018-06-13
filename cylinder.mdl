@@ -1,5 +1,10 @@
 push
-rotate x 45
+rotate x 95
 move 250 100 0
 cylinder 0 -10 0 100 100
+pop
+push
+move 100 300 0
+rotate z 20
+cone 0 0 0 30 200
 display
