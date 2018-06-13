@@ -1,10 +1,14 @@
 push
-rotate x 95
-move 250 100 0
-cylinder 0 -10 0 100 100
+ambient 100 100 100
+light one 0.5 0.75 1 255 0 255
+rotate z 20
+move 300 300 0
+cylinder 0 00 0 30 200
 pop
 push
+ambient 50 50 50
+light two 0.5 0.75 1 255 255 0
 move 100 300 0
 rotate z 20
-cone 0 0 0 30 200
+cylinder 0 0 0 30 200
 display

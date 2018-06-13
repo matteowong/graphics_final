@@ -391,6 +391,18 @@ void my_main() {
 			areflect, dreflect, sreflect);
 	  tmp->lastcol = 0;
 	  break;
+	case CONE:
+	  add_cone(tmp, op[i].op.cone.d[0],
+		       op[i].op.cone.d[1],
+		       op[i].op.cone.d[2],
+		       op[i].op.cone.r,
+		       op[i].op.cone.h,
+		       step_3d);
+	  matrix_mult( peek(systems), tmp );
+	  draw_polygons(tmp, t, zb, view, light, ambient,
+			areflect, dreflect, sreflect);
+	  tmp->lastcol = 0;
+	  break;
 	case TORUS:
 	  /* printf("Torus: %6.2f %6.2f %6.2f r0=%6.2f r1=%6.2f", */
 	  /* 	 op[i].op.torus.d[0],op[i].op.torus.d[1], */
@@ -549,6 +561,22 @@ void my_main() {
 	case DISPLAY:
 	  //printf("Display");
 	  display(t);
+	  break;
+	case AMBIENT:
+	  ambient.red=op[i].op.ambient.c[0];
+	  ambient.green=op[i].op.ambient.c[1];
+	  ambient.blue=op[i].op.ambient.c[2];
+	  break;
+	case LIGHT:
+	  //op[i].op.light.p->name
+	  //light[LOCATION][0-2]
+	  light[LOCATION][0]=lookup_symbol(op[i].op.light.p->name)->s.l->l[0];
+	  light[LOCATION][1]=lookup_symbol(op[i].op.light.p->name)->s.l->l[1];
+	  light[LOCATION][2]=lookup_symbol(op[i].op.light.p->name)->s.l->l[2];
+	  //light[COLOR][0-2]
+	  light[COLOR][0]=lookup_symbol(op[i].op.light.p->name)->s.l->c[0];
+	  light[COLOR][1]=lookup_symbol(op[i].op.light.p->name)->s.l->c[1];
+	  light[COLOR][2]=lookup_symbol(op[i].op.light.p->name)->s.l->c[2];
 	  break;
 	} //end opcode switch
       printf("\n");
@@ -759,6 +787,22 @@ void my_main() {
         //printf("Display");
         display(t);
         break;
+      case AMBIENT:
+	ambient.red=op[i].op.ambient.c[0];
+	ambient.green=op[i].op.ambient.c[1];
+	ambient.blue=op[i].op.ambient.c[2];
+	break;
+      case LIGHT:
+	//op[i].op.light.p->name
+	//light[LOCATION][0-2]
+	light[LOCATION][0]=lookup_symbol(op[i].op.light.p->name)->s.l->l[0];
+	light[LOCATION][1]=lookup_symbol(op[i].op.light.p->name)->s.l->l[1];
+	light[LOCATION][2]=lookup_symbol(op[i].op.light.p->name)->s.l->l[2];
+	//light[COLOR][0-2]
+	light[COLOR][0]=lookup_symbol(op[i].op.light.p->name)->s.l->c[0];
+	light[COLOR][1]=lookup_symbol(op[i].op.light.p->name)->s.l->c[1];
+	light[COLOR][2]=lookup_symbol(op[i].op.light.p->name)->s.l->c[2];
+	break;
       } //end opcode switch
     printf("\n");
   }//end operation loop
