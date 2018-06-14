@@ -4,6 +4,7 @@ LDFLAGS= -lm
 CC= gcc
 
 all: parser
+	mkdir anim
 	./mdl cone.mdl
 	animate icecream.gif
 
