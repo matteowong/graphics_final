@@ -1,0 +1,72 @@
+frames 50
+basename icecream
+constants red .1 .8 .5 .1 .8 .5 .1 .8 .5 241 69 69
+constants blue .1 .8 .5 .1 .8 .5 .1 .8 .5 0 194 217
+constants purple .1 .8 .5 .1 .8 .5 .1 .8 .5 130 61 209
+constants cone_color .1 .8 .5 .1 .8 .5 .1 .8 .5 255 179 92
+constants pink .2 .8 .3 .2 .8 .3 .2 .8 .3 245 177 175
+constants yellow .1 .8 .5 .1 .8 .5 .1 .8 .5 255 255 0
+vary spinny 0 49 0 1
+push
+move 250 250 0
+rotate y 360 spinny
+push
+rotate x 180
+cone cone_color 0 0 0 30 200
+pop
+push
+move 0 25 0
+ambient 245 177 175
+sphere pink 0 0 0 50
+ambient 50 50 50
+pop
+push
+//sprinkles
+move 0 25 50
+rotate z 30
+cylinder red 0 0 0 2 10
+move 0 0 -100
+cylinder red 0 0 0 2 10
+pop
+push
+move -20 0 40
+rotate z 60
+cylinder blue 0 0 0 2 10
+move 0 0 -80
+cylinder blue 0 0 0 2 10
+pop
+push
+move 30 40 40
+rotate z 45
+cylinder purple 0 0 0 2 10
+move 0 0 -80
+cylinder purple 0 0 0 2 10
+pop
+push
+move -26 35 42
+rotate z 50
+cylinder yellow 0 0 0 2 10
+move 0 0 -84
+cylinder yellow 0 0 0 2 10
+pop
+push
+move 0 75 0
+rotate x 90
+cylinder purple 0 0 0 2 10
+pop
+push
+move -37 60 0
+rotate z -35
+cylinder blue 0 0 0 2 10
+rotate z 35
+move 74 0 0
+rotate z 35
+cylinder red 0 0 0 2 10
+pop
+push
+move -52 20 0
+cylinder yellow 0 0 0 2 10
+move 104 0 0
+cylinder yellow 0 0 0 2 10
+//display
+animate
