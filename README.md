@@ -9,4 +9,4 @@
 * light
 
 ## Failed Features
-* Gouraud and Phong Shading, can be found in saddraw.c and saddraw.h
+* Gouraud and Phong Shading, can be found in saddraw.c, saddraw.h, myhash.c
